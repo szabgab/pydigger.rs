@@ -1,3 +1,12 @@
+use clap::Parser;
+/// Command line arguments
+#[derive(Parser, Debug)]
+#[command(author, version, about)]
+pub struct Args {
+    /// Limit the number of iterations
+    #[arg(long)]
+    pub limit: Option<usize>,
+}
 /// Downloads the JSON metadata for a PyPI project given its name and version
 pub fn download_json_for_project(
     name: &str,
@@ -18,32 +27,31 @@ use reqwest::blocking::get;
 use rss::Channel;
 
 fn main() {
+    let args = Args::parse();
     match get_rss() {
-        Ok(rss) => {
-            //println!("RSS {rss}");
-            match parse_rss_from_str(&rss) {
-                Ok(channel) => {
-                    for item in channel.items() {
-                        println!("Title: {}", item.title().unwrap_or("No title"));
-                        println!("Link: {}", item.link().unwrap_or("No link"));
-                        println!(
-                            "Publication Date: {}",
-                            item.pub_date().unwrap_or("No pub date")
-                        );
-                        extract_name_version(item.link().unwrap_or("")).map(|(name, version)| {
-                            println!("Extracted Name: {}, Version: {}", name, version);
-                            match download_json_for_project(&name, &version) {
-                                Ok(json) => println!("Downloaded JSON: {}", json),
-                                Err(e) => eprintln!("Error downloading JSON: {}", e),
-                            }
-                        });
-
-                        println!("-----------------------------------");
+        Ok(rss) => match parse_rss_from_str(&rss) {
+            Ok(channel) => {
+                let items = channel.items();
+                let limit = args.limit.unwrap_or(items.len());
+                for item in items.iter().take(limit) {
+                    println!("Title: {}", item.title().unwrap_or("No title"));
+                    println!("Link: {}", item.link().unwrap_or("No link"));
+                    println!(
+                        "Publication Date: {}",
+                        item.pub_date().unwrap_or("No pub date")
+                    );
+                    if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
+                        println!("Extracted Name: {}, Version: {}", name, version);
+                        match download_json_for_project(&name, &version) {
+                            Ok(json) => println!("Downloaded JSON: {}", json),
+                            Err(e) => eprintln!("Error downloading JSON: {}", e),
+                        }
                     }
+                    println!("-----------------------------------");
                 }
-                Err(e) => eprintln!("Error parsing RSS feed: {}", e),
             }
-        }
+            Err(e) => eprintln!("Error parsing RSS feed: {}", e),
+        },
         Err(e) => eprintln!("Error fetching RSS feed: {}", e),
     }
 }
