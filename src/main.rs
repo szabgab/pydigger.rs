@@ -1,4 +1,56 @@
 use clap::Parser;
+use regex::Regex;
+use reqwest::blocking::get;
+use rss::Channel;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct PyPiProject {
+    pub info: Info,
+    pub urls: Option<Vec<UrlInfo>>, // If present in other samples
+    pub releases: Option<serde_json::Value>, // For flexibility
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Info {
+    pub author: Option<String>,
+    pub author_email: Option<String>,
+    pub bugtrack_url: Option<String>,
+    pub classifiers: Vec<String>,
+    pub description: String,
+    pub description_content_type: Option<String>,
+    pub docs_url: Option<String>,
+    pub download_url: Option<String>,
+    pub home_page: Option<String>,
+    pub keywords: Option<String>,
+    pub license: Option<String>,
+    pub maintainer: Option<String>,
+    pub maintainer_email: Option<String>,
+    pub name: String,
+    pub package_url: Option<String>,
+    pub platform: Option<String>,
+    pub project_url: Option<String>,
+    pub project_urls: Option<serde_json::Map<String, serde_json::Value>>,
+    pub release_url: Option<String>,
+    pub requires_dist: Option<Vec<String>>,
+    pub requires_python: Option<String>,
+    pub summary: Option<String>,
+    pub version: String,
+    pub yanked: Option<bool>,
+    pub yanked_reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UrlInfo {
+    pub url: String,
+    pub packagetype: Option<String>,
+    pub filename: Option<String>,
+}
+
+pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
+    serde_json::from_str(json_str)
+}
+
 /// Command line arguments
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -16,15 +68,12 @@ pub fn download_json_for_project(
     let response = reqwest::blocking::get(&url)?.text()?;
     Ok(response)
 }
-use regex::Regex;
 /// Extracts (name, version) from PyPI project links of the format https://pypi.org/project/NAME/VERSION/
 pub fn extract_name_version(link: &str) -> Option<(String, String)> {
     let re = Regex::new(r"https://pypi\.org/project/([^/]+)/([^/]+)/?").ok()?;
     re.captures(link)
         .map(|caps| (caps[1].to_string(), caps[2].to_string()))
 }
-use reqwest::blocking::get;
-use rss::Channel;
 
 fn main() {
     let args = Args::parse();
@@ -43,7 +92,29 @@ fn main() {
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         println!("Extracted Name: {}, Version: {}", name, version);
                         match download_json_for_project(&name, &version) {
-                            Ok(json) => println!("Downloaded JSON: {}", json),
+                            Ok(json) => {
+                                //println!("Downloaded JSON: {}", json);
+                                match parse_pypi_json(&json) {
+                                    Ok(project) => {
+                                        println!("Project Name: {}", project.info.name);
+                                        println!("Version: {}", project.info.version);
+                                        //println!("Author: {}", project.info.author);
+                                        if let Some(summary) = &project.info.summary {
+                                            println!("Summary: {}", summary);
+                                        }
+                                        if let Some(home_page) = &project.info.home_page {
+                                            println!("Home Page: {}", home_page);
+                                        }
+                                        if let Some(license) = &project.info.license {
+                                            println!("License: {}", license);
+                                        }
+                                        if let Some(requires_dist) = &project.info.requires_dist {
+                                            println!("Requires Dist: {:?}", requires_dist);
+                                        }
+                                    }
+                                    Err(e) => eprintln!("Error parsing JSON: {}", e),
+                                }
+                            }
                             Err(e) => eprintln!("Error downloading JSON: {}", e),
                         }
                     }
