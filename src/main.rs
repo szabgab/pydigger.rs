@@ -96,6 +96,10 @@ pub fn save_json_to_file(
 
 fn main() {
     let args = Args::parse();
+    download_project_json(&args);
+}
+
+fn download_project_json(args: &Args) {
     match get_rss() {
         Ok(rss) => match parse_rss_from_str(&rss) {
             Ok(channel) => {
@@ -117,6 +121,9 @@ fn main() {
                                 save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
                                     eprintln!("Error saving JSON to file: {}", e);
                                 });
+                                // TODO: remove earlier version of the same project
+                                // TODO: Create report from all the project json files:
+                                // Which project has repository URL, license
                                 match parse_pypi_json(&json) {
                                     Ok(project) => {
                                         println!("Project Name: {}", project.info.name);
