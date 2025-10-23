@@ -2,8 +2,9 @@ use clap::Parser;
 use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
@@ -48,6 +49,11 @@ pub struct UrlInfo {
     pub filename: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct Report {
+    pub total: usize,
+}
+
 pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
     serde_json::from_str(json_str)
 }
@@ -59,6 +65,10 @@ pub struct Args {
     /// Limit the number of iterations
     #[arg(long)]
     pub limit: Option<usize>,
+
+    /// Generate a report from existing project files
+    #[arg(long)]
+    pub report: bool,
 }
 /// Downloads the JSON metadata for a PyPI project given its name and version
 pub fn download_json_for_project(
@@ -94,9 +104,80 @@ pub fn save_json_to_file(
     Ok(())
 }
 
+/// Generate a report by counting all project JSON files in data/projects/
+/// Returns the total count of projects and writes the report to report.json
+pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
+    let projects_dir = Path::new("data/projects");
+    let mut total_projects = 0;
+
+    // Check if the projects directory exists
+    if !projects_dir.exists() {
+        eprintln!("Projects directory does not exist: {:?}", projects_dir);
+        let report = Report { total: 0 };
+        let report_json = serde_json::to_string_pretty(&report)?;
+        fs::write("data/report.json", report_json)?;
+        return Ok(());
+    }
+
+    // Iterate through all subdirectories in data/projects/
+    for entry in fs::read_dir(projects_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            // For each project directory, count JSON files
+            for file_entry in fs::read_dir(&path)? {
+                let file_entry = file_entry?;
+                let file_path = file_entry.path();
+
+                if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
+                    // Verify it's a valid JSON file by trying to parse it
+                    match fs::read_to_string(&file_path) {
+                        Ok(json_content) => match parse_pypi_json(&json_content) {
+                            Ok(_) => {
+                                total_projects += 1;
+                                println!("Counted project: {:?}", file_path);
+                            }
+                            Err(e) => {
+                                eprintln!("Invalid JSON in file {:?}: {}", file_path, e);
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("Error reading file {:?}: {}", file_path, e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Create the report
+    let report = Report {
+        total: total_projects,
+    };
+    let report_json = serde_json::to_string_pretty(&report)?;
+
+    // Write the report to data/report.json
+    fs::write("data/report.json", report_json)?;
+    println!(
+        "Generated data/report.json with {} total projects",
+        total_projects
+    );
+
+    Ok(())
+}
+
 fn main() {
     let args = Args::parse();
-    download_project_json(&args);
+
+    if args.report {
+        match generate_report() {
+            Ok(()) => println!("Report generated successfully!"),
+            Err(e) => eprintln!("Error generating report: {}", e),
+        }
+    } else {
+        download_project_json(&args);
+    }
 }
 
 fn download_project_json(args: &Args) {
