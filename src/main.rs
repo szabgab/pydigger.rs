@@ -3,6 +3,7 @@ use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
 use serde::Deserialize;
+use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
@@ -75,6 +76,24 @@ pub fn extract_name_version(link: &str) -> Option<(String, String)> {
         .map(|caps| (caps[1].to_string(), caps[2].to_string()))
 }
 
+/// Saves the JSON metadata to a file in data/projects/$name/$version.json
+pub fn save_json_to_file(
+    name: &str,
+    version: &str,
+    json: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let dir_path = format!("data/projects/{}", name);
+    let file_path = format!("{}/{}.json", dir_path, version);
+
+    // Create the directory structure if it doesn't exist
+    fs::create_dir_all(&dir_path)?;
+
+    // Write the JSON to the file
+    fs::write(&file_path, json)?;
+
+    Ok(())
+}
+
 fn main() {
     let args = Args::parse();
     match get_rss() {
@@ -91,9 +110,13 @@ fn main() {
                     );
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         println!("Extracted Name: {}, Version: {}", name, version);
+                        // TODO: Only download the json if we don't have it already
                         match download_json_for_project(&name, &version) {
                             Ok(json) => {
                                 //println!("Downloaded JSON: {}", json);
+                                save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
+                                    eprintln!("Error saving JSON to file: {}", e);
+                                });
                                 match parse_pypi_json(&json) {
                                     Ok(project) => {
                                         println!("Project Name: {}", project.info.name);
@@ -110,6 +133,9 @@ fn main() {
                                         }
                                         if let Some(requires_dist) = &project.info.requires_dist {
                                             println!("Requires Dist: {:?}", requires_dist);
+                                        }
+                                        if let Some(download_url) = &project.info.download_url {
+                                            println!("Download URL: {}", download_url);
                                         }
                                     }
                                     Err(e) => eprintln!("Error parsing JSON: {}", e),
