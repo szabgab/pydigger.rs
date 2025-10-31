@@ -51,6 +51,7 @@ jobs:
     - name: Get Help
       run: |
         ls -l
+        chmod +x pydigger
         ./pydigger -h
 
 
