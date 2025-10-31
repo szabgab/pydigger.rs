@@ -50,6 +50,12 @@ pub struct UrlInfo {
 }
 
 #[derive(Debug, Serialize)]
+pub struct MyProject {
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Report {
     pub total: usize,
 }
@@ -69,6 +75,9 @@ pub struct Args {
     /// Generate a report from existing project files
     #[arg(long)]
     pub report: bool,
+
+    #[arg(long)]
+    pub download: bool,
 }
 /// Downloads the JSON metadata for a PyPI project given its name and version
 pub fn download_json_for_project(
@@ -84,6 +93,29 @@ pub fn extract_name_version(link: &str) -> Option<(String, String)> {
     let re = Regex::new(r"https://pypi\.org/project/([^/]+)/([^/]+)/?").ok()?;
     re.captures(link)
         .map(|caps| (caps[1].to_string(), caps[2].to_string()))
+}
+
+pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::error::Error>> {
+    let dir_path = "data/projects";
+    let dir_path = if project.name.len() > 2 {
+        let first_two = &project.name[0..2];
+        format!("{}/{}", dir_path, first_two)
+    } else {
+        dir_path.to_string()
+    };
+
+    let file_path = format!("{}/{}.json", dir_path, project.name);
+
+    // Create the directory structure if it doesn't exist
+    fs::create_dir_all(&dir_path)?;
+
+    // Serialize the MyProject struct to JSON
+    let json = serde_json::to_string_pretty(project)?;
+
+    // Write the JSON to the file
+    fs::write(&file_path, json)?;
+
+    Ok(())
 }
 
 /// Saves the JSON metadata to a file in data/projects/$name/$version.json
@@ -167,19 +199,6 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn main() {
-    let args = Args::parse();
-
-    if args.report {
-        match generate_report() {
-            Ok(()) => println!("Report generated successfully!"),
-            Err(e) => eprintln!("Error generating report: {}", e),
-        }
-    } else {
-        download_project_json(&args);
-    }
-}
-
 fn download_project_json(args: &Args) {
     match get_rss() {
         Ok(rss) => match parse_rss_from_str(&rss) {
@@ -187,44 +206,52 @@ fn download_project_json(args: &Args) {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
                 for item in items.iter().take(limit) {
-                    println!("Title: {}", item.title().unwrap_or("No title"));
-                    println!("Link: {}", item.link().unwrap_or("No link"));
-                    println!(
-                        "Publication Date: {}",
-                        item.pub_date().unwrap_or("No pub date")
-                    );
+                    //println!("Title: {}", item.title().unwrap_or("No title"));
+                    //println!("Link: {}", item.link().unwrap_or("No link"));
+                    // println!(
+                    //     "Publication Date: {}",
+                    //     item.pub_date().unwrap_or("No pub date")
+                    // );
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
-                        println!("Extracted Name: {}, Version: {}", name, version);
+                        //println!("Extracted Name: {}, Version: {}", name, version);
                         // TODO: Only download the json if we don't have it already
                         match download_json_for_project(&name, &version) {
                             Ok(json) => {
                                 //println!("Downloaded JSON: {}", json);
-                                save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
-                                    eprintln!("Error saving JSON to file: {}", e);
-                                });
+                                // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
+                                //     eprintln!("Error saving JSON to file: {}", e);
+                                // });
                                 // TODO: remove earlier version of the same project
                                 // TODO: Create report from all the project json files:
                                 // Which project has repository URL, license
                                 match parse_pypi_json(&json) {
                                     Ok(project) => {
-                                        println!("Project Name: {}", project.info.name);
-                                        println!("Version: {}", project.info.version);
+                                        let my_project = MyProject {
+                                            name: project.info.name.clone(),
+                                            version: project.info.version.clone(),
+                                        };
+                                        save_my_project_to_file(&my_project).unwrap_or_else(|e| {
+                                            eprintln!("Error saving myproject JSON to file: {}", e);
+                                        });
+
+                                        // println!("Project Name: {}", project.info.name);
+                                        // println!("Version: {}", project.info.version);
                                         //println!("Author: {}", project.info.author);
-                                        if let Some(summary) = &project.info.summary {
-                                            println!("Summary: {}", summary);
-                                        }
-                                        if let Some(home_page) = &project.info.home_page {
-                                            println!("Home Page: {}", home_page);
-                                        }
-                                        if let Some(license) = &project.info.license {
-                                            println!("License: {}", license);
-                                        }
-                                        if let Some(requires_dist) = &project.info.requires_dist {
-                                            println!("Requires Dist: {:?}", requires_dist);
-                                        }
-                                        if let Some(download_url) = &project.info.download_url {
-                                            println!("Download URL: {}", download_url);
-                                        }
+                                        // if let Some(summary) = &project.info.summary {
+                                        //     println!("Summary: {}", summary);
+                                        // }
+                                        // if let Some(home_page) = &project.info.home_page {
+                                        //     println!("Home Page: {}", home_page);
+                                        // }
+                                        // if let Some(license) = &project.info.license {
+                                        //     println!("License: {}", license);
+                                        // }
+                                        // if let Some(requires_dist) = &project.info.requires_dist {
+                                        //     println!("Requires Dist: {:?}", requires_dist);
+                                        // }
+                                        // if let Some(download_url) = &project.info.download_url {
+                                        //     println!("Download URL: {}", download_url);
+                                        // }
                                     }
                                     Err(e) => eprintln!("Error parsing JSON: {}", e),
                                 }
@@ -232,7 +259,7 @@ fn download_project_json(args: &Args) {
                             Err(e) => eprintln!("Error downloading JSON: {}", e),
                         }
                     }
-                    println!("-----------------------------------");
+                    //println!("-----------------------------------");
                 }
             }
             Err(e) => eprintln!("Error parsing RSS feed: {}", e),
@@ -250,4 +277,19 @@ pub fn get_rss() -> Result<String, Box<dyn std::error::Error>> {
     let url = "https://pypi.org/rss/updates.xml";
     let response = get(url)?.text()?;
     Ok(response)
+}
+
+fn main() {
+    let args = Args::parse();
+
+    if args.download {
+        download_project_json(&args);
+    }
+
+    if args.report {
+        match generate_report() {
+            Ok(()) => println!("Report generated successfully!"),
+            Err(e) => eprintln!("Error generating report: {}", e),
+        }
+    }
 }
