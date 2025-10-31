@@ -52,7 +52,7 @@ jobs:
       run: |
         ls -l
         tree pydigger
-        #chmod +x pydigger
-        #./pydigger -h
+        chmod +x pydigger/pydigger
+        ./pydigger/pydigger -h
 
 
