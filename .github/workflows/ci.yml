@@ -20,6 +20,13 @@ jobs:
 
     - uses: actions/checkout@v5
 
+    - name: Checkout the data repo
+      uses: actions/checkout@v5
+      with:
+        repository: 'szabgab/pydigger-data'
+        path: data
+
+
     - name: Check format
       run: cargo fmt --check
 #    - name: Check clippy
