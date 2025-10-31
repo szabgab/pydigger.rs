@@ -48,4 +48,9 @@ jobs:
         path: pydigger
         #repository: szabgab/pydigger.rs
 
+    - name: Get Help
+      run: |
+        ls -l
+        ./pydigger -h
+
 
