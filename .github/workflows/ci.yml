@@ -42,7 +42,7 @@ jobs:
     - name: Tree
       run: tree data/
 
- - name: Commit new data
+    - name: Commit new data
       run: |
         cd data
         GIT_STATUS=$(git status --porcelain)
