@@ -32,7 +32,7 @@ jobs:
     - name: Linux binary
       uses: actions/upload-artifact@v5
       with:
-        name: rustatic-linux-release
+        name: pydigger-linux-release
         path: target/release/pydigger
 
 
