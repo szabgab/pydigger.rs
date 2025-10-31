@@ -49,7 +49,7 @@ pub struct UrlInfo {
     pub filename: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MyProject {
     pub name: String,
     pub version: String,
@@ -165,15 +165,17 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
                 if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
                     // Verify it's a valid JSON file by trying to parse it
                     match fs::read_to_string(&file_path) {
-                        Ok(json_content) => match parse_pypi_json(&json_content) {
-                            Ok(_) => {
-                                total_projects += 1;
-                                println!("Counted project: {:?}", file_path);
+                        Ok(json_content) => {
+                            match serde_json::from_str::<MyProject>(&json_content) {
+                                Ok(_) => {
+                                    total_projects += 1;
+                                    //println!("Counted project: {:?}", file_path);
+                                }
+                                Err(e) => {
+                                    eprintln!("Invalid JSON in file {:?}: {}", file_path, e);
+                                }
                             }
-                            Err(e) => {
-                                eprintln!("Invalid JSON in file {:?}: {}", file_path, e);
-                            }
-                        },
+                        }
                         Err(e) => {
                             eprintln!("Error reading file {:?}: {}", file_path, e);
                         }
