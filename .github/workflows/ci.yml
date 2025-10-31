@@ -35,4 +35,13 @@ jobs:
         name: pydigger-linux-release
         path: target/release/pydigger
 
+  other:
+    - name: Download binary
+      uses: actions/download-artifact@v6
+      with:
+        name: pydigger-linux-release
+        #github-token: ${{ secrets.GH_PAT }}
+        path: pydigger
+        #repository: szabgab/pydigger.rs
+
 
