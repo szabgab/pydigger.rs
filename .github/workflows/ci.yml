@@ -36,6 +36,9 @@ jobs:
         path: target/release/pydigger
 
   other:
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Download binary
       uses: actions/download-artifact@v6
       with:
