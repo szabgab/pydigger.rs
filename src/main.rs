@@ -119,6 +119,16 @@ fn get_pypi_project_path(name: &str) -> String {
     }
 }
 
+fn load_mt_project_from_file(name: &str) -> Result<MyProject, Box<dyn std::error::Error>> {
+    let dir_path = get_pypi_project_path(name);
+    let file_path = format!("{}/{}.json", dir_path, name);
+
+    let json_content = fs::read_to_string(&file_path)?;
+    let project: MyProject = serde_json::from_str(&json_content)?;
+
+    Ok(project)
+}
+
 pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::error::Error>> {
     let dir_path = get_pypi_project_path(&project.name);
     let file_path = format!("{}/{}.json", dir_path, project.name);
@@ -251,7 +261,14 @@ fn download_project_json(args: &Args) {
 
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         //println!("Extracted Name: {}, Version: {}", name, version);
-                        // TODO: Only download the json if we don't have it already
+                        // Only download the json if we don't have it already
+                        if let Ok(saved_project) = load_mt_project_from_file(&name) {
+                            if saved_project.pub_date >= pub_date {
+                                info!("Project {} is up to date, skipping download.", name);
+                                continue;
+                            }
+                        };
+
                         match download_json_for_project(&name, &version) {
                             Ok(json) => {
                                 // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
