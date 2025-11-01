@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+use chrono::serde::ts_seconds;
+use chrono::{DateTime, Utc};
 use tracing::{Level, debug, error, info};
 use tracing_subscriber::FmtSubscriber;
 
@@ -58,6 +60,9 @@ pub struct MyProject {
     pub version: String,
     pub summary: Option<String>,
     pub license: Option<String>,
+
+    #[serde(with = "ts_seconds")]
+    pub_date: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -224,10 +229,26 @@ fn download_project_json(args: &Args) {
                 for item in items.iter().take(limit) {
                     debug!("Title: {}", item.title().unwrap_or("No title"));
                     debug!("Link: {}", item.link().unwrap_or("No link"));
-                    debug!(
-                        "Publication Date: {}",
-                        item.pub_date().unwrap_or("No pub date")
-                    );
+
+                    let pub_date = if let Some(pub_date) = item.pub_date() {
+                        debug!("Publication Date: {pub_date}");
+                        match chrono::DateTime::parse_from_rfc2822(pub_date)
+                            .map(|dt| dt.with_timezone(&chrono::Utc))
+                        {
+                            Ok(parsed_date) => {
+                                debug!("Parsed date: {}", parsed_date);
+                                parsed_date
+                            }
+                            Err(e) => {
+                                error!("Error parsing date '{}': {}", pub_date, e);
+                                continue;
+                            }
+                        }
+                    } else {
+                        error!("No publication date found");
+                        continue;
+                    };
+
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         //println!("Extracted Name: {}, Version: {}", name, version);
                         // TODO: Only download the json if we don't have it already
@@ -243,6 +264,7 @@ fn download_project_json(args: &Args) {
                                             version: project.info.version.clone(),
                                             summary: project.info.summary.clone(),
                                             license: project.info.license.clone(),
+                                            pub_date: pub_date,
                                         };
                                         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
                                             error!("Error saving myproject JSON to file: {}", e);
