@@ -105,6 +105,7 @@ pub fn extract_name_version(link: &str) -> Option<(String, String)> {
 
 fn get_pypi_project_path(name: &str) -> String {
     let dir_path = get_pypi_path();
+    let name = name.to_lowercase();
     if name.len() > 2 {
         let first_two = &name[0..2];
         format!("{}/{}", dir_path, first_two)
