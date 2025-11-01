@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+use tracing::{Level, debug, info};
+use tracing_subscriber::FmtSubscriber;
+
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
     pub info: Info,
@@ -78,6 +81,9 @@ pub struct Args {
 
     #[arg(long)]
     pub download: bool,
+
+    #[arg(long)]
+    pub log: Option<tracing::Level>,
 }
 /// Downloads the JSON metadata for a PyPI project given its name and version
 pub fn download_json_for_project(
@@ -170,7 +176,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
                             match serde_json::from_str::<MyProject>(&json_content) {
                                 Ok(_) => {
                                     total_projects += 1;
-                                    //println!("Counted project: {:?}", file_path);
+                                    debug!("Counted project: {:?}", file_path);
                                 }
                                 Err(e) => {
                                     eprintln!("Invalid JSON in file {:?}: {}", file_path, e);
@@ -209,7 +215,7 @@ fn download_project_json(args: &Args) {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
                 for item in items.iter().take(limit) {
-                    //println!("Title: {}", item.title().unwrap_or("No title"));
+                    debug!("Title: {}", item.title().unwrap_or("No title"));
                     //println!("Link: {}", item.link().unwrap_or("No link"));
                     // println!(
                     //     "Publication Date: {}",
@@ -286,8 +292,17 @@ fn get_pypi_path() -> String {
     String::from("data/pypi")
 }
 
+fn setup_logging(args: &Args) {
+    let level = args.log.unwrap_or(Level::INFO);
+    let subscriber = FmtSubscriber::builder().with_max_level(level).finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+}
+
 fn main() {
     let args = Args::parse();
+    setup_logging(&args);
+    info!("PyDigger started");
 
     if args.download {
         download_project_json(&args);
