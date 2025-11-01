@@ -103,15 +103,18 @@ pub fn extract_name_version(link: &str) -> Option<(String, String)> {
         .map(|caps| (caps[1].to_string(), caps[2].to_string()))
 }
 
-pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::error::Error>> {
+fn get_pypi_project_path(name: &str) -> String {
     let dir_path = get_pypi_path();
-    let dir_path = if project.name.len() > 2 {
-        let first_two = &project.name[0..2];
+    if name.len() > 2 {
+        let first_two = &name[0..2];
         format!("{}/{}", dir_path, first_two)
     } else {
         dir_path.to_string()
-    };
+    }
+}
 
+pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::error::Error>> {
+    let dir_path = get_pypi_project_path(&project.name);
     let file_path = format!("{}/{}.json", dir_path, project.name);
 
     // Create the directory structure if it doesn't exist
