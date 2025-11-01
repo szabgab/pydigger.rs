@@ -96,7 +96,7 @@ pub fn extract_name_version(link: &str) -> Option<(String, String)> {
 }
 
 pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::error::Error>> {
-    let dir_path = "data/projects";
+    let dir_path = get_pypi_path();
     let dir_path = if project.name.len() > 2 {
         let first_two = &project.name[0..2];
         format!("{}/{}", dir_path, first_two)
@@ -118,13 +118,13 @@ pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-/// Saves the JSON metadata to a file in data/projects/$name/$version.json
+/// Saves the JSON metadata to a file in get_pypi_path()/$name/$version.json
 pub fn save_json_to_file(
     name: &str,
     version: &str,
     json: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let dir_path = format!("data/projects/{}", name);
+    let dir_path = format!("{}/{}", get_pypi_path(), name);
     let file_path = format!("{}/{}.json", dir_path, version);
 
     // Create the directory structure if it doesn't exist
@@ -136,23 +136,24 @@ pub fn save_json_to_file(
     Ok(())
 }
 
-/// Generate a report by counting all project JSON files in data/projects/
+/// Generate a report by counting all project JSON files in get_pypi_path()
 /// Returns the total count of projects and writes the report to report.json
 pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
-    let projects_dir = Path::new("data/projects");
+    let pypi_dir = get_pypi_path();
+    let pypi_dir = Path::new(&pypi_dir);
     let mut total_projects = 0;
 
     // Check if the projects directory exists
-    if !projects_dir.exists() {
-        eprintln!("Projects directory does not exist: {:?}", projects_dir);
+    if !pypi_dir.exists() {
+        eprintln!("Projects directory does not exist: {:?}", pypi_dir);
         let report = Report { total: 0 };
         let report_json = serde_json::to_string_pretty(&report)?;
         fs::write("data/report.json", report_json)?;
         return Ok(());
     }
 
-    // Iterate through all subdirectories in data/projects/
-    for entry in fs::read_dir(projects_dir)? {
+    // Iterate through all subdirectories in get_pypi_path()
+    for entry in fs::read_dir(pypi_dir)? {
         let entry = entry?;
         let path = entry.path();
 
@@ -279,6 +280,10 @@ pub fn get_rss() -> Result<String, Box<dyn std::error::Error>> {
     let url = "https://pypi.org/rss/updates.xml";
     let response = get(url)?.text()?;
     Ok(response)
+}
+
+fn get_pypi_path() -> String {
+    String::from("data/pypi")
 }
 
 fn main() {
