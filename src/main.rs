@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
-use tracing::{Level, debug, info};
+use tracing::{Level, debug, error, info};
 use tracing_subscriber::FmtSubscriber;
 
 #[derive(Debug, Deserialize)]
@@ -151,7 +151,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
 
     // Check if the projects directory exists
     if !pypi_dir.exists() {
-        eprintln!("Projects directory does not exist: {:?}", pypi_dir);
+        info!("Projects directory does not exist: {:?}", pypi_dir);
         let report = Report { total: 0 };
         let report_json = serde_json::to_string_pretty(&report)?;
         fs::write("data/report.json", report_json)?;
@@ -179,12 +179,12 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
                                     debug!("Counted project: {:?}", file_path);
                                 }
                                 Err(e) => {
-                                    eprintln!("Invalid JSON in file {:?}: {}", file_path, e);
+                                    error!("Invalid JSON in file {:?}: {}", file_path, e);
                                 }
                             }
                         }
                         Err(e) => {
-                            eprintln!("Error reading file {:?}: {}", file_path, e);
+                            error!("Error reading file {:?}: {}", file_path, e);
                         }
                     }
                 }
@@ -200,7 +200,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write the report to data/report.json
     fs::write("data/report.json", report_json)?;
-    println!(
+    info!(
         "Generated data/report.json with {} total projects",
         total_projects
     );
@@ -216,19 +216,18 @@ fn download_project_json(args: &Args) {
                 let limit = args.limit.unwrap_or(items.len());
                 for item in items.iter().take(limit) {
                     debug!("Title: {}", item.title().unwrap_or("No title"));
-                    //println!("Link: {}", item.link().unwrap_or("No link"));
-                    // println!(
-                    //     "Publication Date: {}",
-                    //     item.pub_date().unwrap_or("No pub date")
-                    // );
+                    debug!("Link: {}", item.link().unwrap_or("No link"));
+                    debug!(
+                        "Publication Date: {}",
+                        item.pub_date().unwrap_or("No pub date")
+                    );
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         //println!("Extracted Name: {}, Version: {}", name, version);
                         // TODO: Only download the json if we don't have it already
                         match download_json_for_project(&name, &version) {
                             Ok(json) => {
-                                //println!("Downloaded JSON: {}", json);
                                 // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
-                                //     eprintln!("Error saving JSON to file: {}", e);
+                                //     error!("Error saving JSON to file: {}", e);
                                 // });
                                 // TODO: remove earlier version of the same project
                                 // TODO: Create report from all the project json files:
@@ -240,40 +239,41 @@ fn download_project_json(args: &Args) {
                                             version: project.info.version.clone(),
                                         };
                                         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
-                                            eprintln!("Error saving myproject JSON to file: {}", e);
+                                            error!("Error saving myproject JSON to file: {}", e);
                                         });
 
-                                        // println!("Project Name: {}", project.info.name);
-                                        // println!("Version: {}", project.info.version);
-                                        //println!("Author: {}", project.info.author);
-                                        // if let Some(summary) = &project.info.summary {
-                                        //     println!("Summary: {}", summary);
-                                        // }
-                                        // if let Some(home_page) = &project.info.home_page {
-                                        //     println!("Home Page: {}", home_page);
-                                        // }
-                                        // if let Some(license) = &project.info.license {
-                                        //     println!("License: {}", license);
-                                        // }
-                                        // if let Some(requires_dist) = &project.info.requires_dist {
-                                        //     println!("Requires Dist: {:?}", requires_dist);
-                                        // }
-                                        // if let Some(download_url) = &project.info.download_url {
-                                        //     println!("Download URL: {}", download_url);
-                                        // }
+                                        debug!("Project Name: {}", project.info.name);
+                                        debug!("Version: {}", project.info.version);
+                                        if let Some(author) = &project.info.author {
+                                            debug!("Author: {}", author);
+                                        }
+                                        if let Some(summary) = &project.info.summary {
+                                            debug!("Summary: {}", summary);
+                                        }
+                                        if let Some(home_page) = &project.info.home_page {
+                                            debug!("Home Page: {}", home_page);
+                                        }
+                                        if let Some(license) = &project.info.license {
+                                            debug!("License: {}", license);
+                                        }
+                                        if let Some(requires_dist) = &project.info.requires_dist {
+                                            debug!("Requires Dist: {:?}", requires_dist);
+                                        }
+                                        if let Some(download_url) = &project.info.download_url {
+                                            debug!("Download URL: {}", download_url);
+                                        }
                                     }
-                                    Err(e) => eprintln!("Error parsing JSON: {}", e),
+                                    Err(e) => error!("Error parsing JSON: {}", e),
                                 }
                             }
-                            Err(e) => eprintln!("Error downloading JSON: {}", e),
+                            Err(e) => error!("Error downloading JSON: {}", e),
                         }
                     }
-                    //println!("-----------------------------------");
                 }
             }
-            Err(e) => eprintln!("Error parsing RSS feed: {}", e),
+            Err(e) => error!("Error parsing RSS feed: {}", e),
         },
-        Err(e) => eprintln!("Error fetching RSS feed: {}", e),
+        Err(e) => error!("Error fetching RSS feed: {}", e),
     }
 }
 
@@ -310,8 +310,8 @@ fn main() {
 
     if args.report {
         match generate_report() {
-            Ok(()) => println!("Report generated successfully!"),
-            Err(e) => eprintln!("Error generating report: {}", e),
+            Ok(()) => info!("Report generated successfully!"),
+            Err(e) => error!("Error generating report: {}", e),
         }
     }
 }
