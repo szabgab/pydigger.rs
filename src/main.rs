@@ -56,6 +56,8 @@ pub struct UrlInfo {
 pub struct MyProject {
     pub name: String,
     pub version: String,
+    pub summary: Option<String>,
+    pub license: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -144,6 +146,7 @@ pub fn save_json_to_file(
 
 /// Generate a report by counting all project JSON files in get_pypi_path()
 /// Returns the total count of projects and writes the report to report.json
+/// TODO: Which project has repository URL, license and which does not
 pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     let pypi_dir = get_pypi_path();
     let pypi_dir = Path::new(&pypi_dir);
@@ -229,14 +232,13 @@ fn download_project_json(args: &Args) {
                                 // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
                                 //     error!("Error saving JSON to file: {}", e);
                                 // });
-                                // TODO: remove earlier version of the same project
-                                // TODO: Create report from all the project json files:
-                                // Which project has repository URL, license
                                 match parse_pypi_json(&json) {
                                     Ok(project) => {
                                         let my_project = MyProject {
                                             name: project.info.name.clone(),
                                             version: project.info.version.clone(),
+                                            summary: project.info.summary.clone(),
+                                            license: project.info.license.clone(),
                                         };
                                         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
                                             error!("Error saving myproject JSON to file: {}", e);
