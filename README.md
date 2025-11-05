@@ -1,5 +1,7 @@
 # PyDigger implemented in Rust
 
+See [DEVELOPMENT](DEVELOPMENT.md)
+
 * Get the details in the json file
     * For https://pypi.org/project/txt2detection/1.0.6/
     * use this address https://pypi.org/pypi/txt2detection/1.0.6/json
@@ -39,3 +41,20 @@
 * Copy the files from the data repo to the web site
 * Copy the HTML file and other static files to the web site.
 * Copy the front-end code to the web site
+
+-----
+
+
+Collect
+* Save how many were in the RSS feed in the most recent run.
+* Save the start time of data collection.
+* Save elapsed time of data collection.
+* ----
+* Save how many projects were download in the most recent run
+* In the current run cache the names of the projects we see and only download each one once - this will be more important when we move to async.
+* Save how many unique names were in the most recent RSS feed
+* Switch data collection to be async
+
+Report
+* List the N most recent packages
+
