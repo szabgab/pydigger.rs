@@ -54,7 +54,7 @@ pub struct UrlInfo {
     pub filename: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MyProject {
     pub name: String,
     pub version: String,
@@ -76,6 +76,7 @@ pub struct CollectStats {
 #[derive(Debug, Serialize)]
 pub struct Report {
     pub total: usize,
+    recent_projects: Vec<MyProject>,
 }
 
 pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
@@ -190,9 +191,13 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     let projects = load_all_projects(pypi_dir)?;
     let total_projects = projects.len();
 
+    let PAGE_SIZE: usize = 10;
+    let pages_size = total_projects.min(PAGE_SIZE);
+
     // Create the report
     let report = Report {
         total: total_projects,
+        recent_projects: projects.into_iter().take(pages_size).collect(),
     };
     let report_json = serde_json::to_string_pretty(&report)?;
 
@@ -244,6 +249,8 @@ fn load_all_projects(pypi_dir: &Path) -> Result<Vec<MyProject>, Box<dyn std::err
             }
         }
     }
+
+    projects.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
 
     Ok(projects)
 }

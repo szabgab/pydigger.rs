@@ -42,8 +42,8 @@ See [DEVELOPMENT](DEVELOPMENT.md)
 * Copy the HTML file and other static files to the web site.
 * Copy the front-end code to the web site
 
------
 
+## TODO
 
 Collect
 * Save how many were in the RSS feed in the most recent run.
@@ -56,5 +56,9 @@ Collect
 * Switch data collection to be async
 
 Report
-* List the N most recent packages
-
+* Show the total number of packages.
+* List the N most recent packages.
+* ----
+* For each package create its own page
+* Create stats page with list of licenses, only show licenses that are less than 20 characters long
+* stats page list (most recent) packages that have no license or where the license is more than 20 characters long.
