@@ -186,50 +186,9 @@ pub fn save_download_stats(cs: CollectStats) -> Result<(), Box<dyn std::error::E
 pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     let pypi_dir = get_pypi_path();
     let pypi_dir = Path::new(&pypi_dir);
-    let mut total_projects = 0;
 
-    // Check if the projects directory exists
-    if !pypi_dir.exists() {
-        info!("Projects directory does not exist: {:?}", pypi_dir);
-        let report = Report { total: 0 };
-        let report_json = serde_json::to_string_pretty(&report)?;
-        fs::write("data/report.json", report_json)?;
-        return Ok(());
-    }
-
-    // Iterate through all subdirectories in get_pypi_path()
-    for entry in fs::read_dir(pypi_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            // For each project directory, count JSON files
-            for file_entry in fs::read_dir(&path)? {
-                let file_entry = file_entry?;
-                let file_path = file_entry.path();
-
-                if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
-                    // Verify it's a valid JSON file by trying to parse it
-                    match fs::read_to_string(&file_path) {
-                        Ok(json_content) => {
-                            match serde_json::from_str::<MyProject>(&json_content) {
-                                Ok(_) => {
-                                    total_projects += 1;
-                                    debug!("Counted project: {:?}", file_path);
-                                }
-                                Err(e) => {
-                                    error!("Invalid JSON in file {:?}: {}", file_path, e);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            error!("Error reading file {:?}: {}", file_path, e);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    let projects = load_all_projects(pypi_dir)?;
+    let total_projects = projects.len();
 
     // Create the report
     let report = Report {
@@ -245,6 +204,48 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+}
+
+fn load_all_projects(pypi_dir: &Path) -> Result<Vec<MyProject>, Box<dyn std::error::Error>> {
+    let mut projects = vec![];
+    if !pypi_dir.exists() {
+        return Ok(projects);
+    }
+    // Iterate through all subdirectories in get_pypi_path()
+
+    for entry in fs::read_dir(pypi_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            // For each project directory, count JSON files
+            for file_entry in fs::read_dir(&path)? {
+                let file_entry = file_entry?;
+                let file_path = file_entry.path();
+
+                if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
+                    // Verify it's a valid JSON file by trying to parse it
+                    match fs::read_to_string(&file_path) {
+                        Ok(json_content) => {
+                            match serde_json::from_str::<MyProject>(&json_content) {
+                                Ok(project) => {
+                                    projects.push(project);
+                                }
+                                Err(e) => {
+                                    error!("Invalid JSON in file {:?}: {}", file_path, e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error reading file {:?}: {}", file_path, e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(projects)
 }
 
 fn download_project_json(args: &Args) -> CollectStats {
