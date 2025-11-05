@@ -65,6 +65,13 @@ pub struct MyProject {
     pub_date: DateTime<Utc>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CollectStats {
+    #[serde(with = "ts_seconds")]
+    start_date: DateTime<Utc>,
+    projects_in_rss: u32,
+}
+
 #[derive(Debug, Serialize)]
 pub struct Report {
     pub total: usize,
@@ -163,6 +170,15 @@ pub fn save_json_to_file(
     Ok(())
 }
 
+pub fn save_download_stats(cs: CollectStats) -> Result<(), Box<dyn std::error::Error>> {
+    let filename = "data/pypi.json";
+
+    let json = serde_json::to_string_pretty(&cs)?;
+    fs::write(filename, json)?;
+
+    Ok(())
+}
+
 /// Generate a report by counting all project JSON files in get_pypi_path()
 /// Returns the total count of projects and writes the report to report.json
 /// TODO: Which project has repository URL, license and which does not
@@ -230,12 +246,17 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn download_project_json(args: &Args) {
+fn download_project_json(args: &Args) -> CollectStats {
+    let mut cs = CollectStats {
+        start_date: Utc::now(),
+        projects_in_rss: 0,
+    };
     match get_rss() {
         Ok(rss) => match parse_rss_from_str(&rss) {
             Ok(channel) => {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
+                cs.projects_in_rss = items.len() as u32;
                 for item in items.iter().take(limit) {
                     debug!("Title: {}", item.title().unwrap_or("No title"));
                     debug!("Link: {}", item.link().unwrap_or("No link"));
@@ -320,6 +341,8 @@ fn download_project_json(args: &Args) {
         },
         Err(e) => error!("Error fetching RSS feed: {}", e),
     }
+
+    cs
 }
 
 pub fn parse_rss_from_str(rss_str: &str) -> Result<Channel, Box<dyn std::error::Error>> {
@@ -350,7 +373,10 @@ fn main() {
     info!("PyDigger started");
 
     if args.download {
-        download_project_json(&args);
+        let cs = download_project_json(&args);
+        save_download_stats(cs).unwrap_or_else(|e| {
+            error!("Error saving download stats: {}", e);
+        });
     }
 
     if args.report {
