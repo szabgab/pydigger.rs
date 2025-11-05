@@ -70,6 +70,7 @@ pub struct CollectStats {
     #[serde(with = "ts_seconds")]
     start_date: DateTime<Utc>,
     projects_in_rss: u32,
+    elapsed_time: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -247,16 +248,14 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn download_project_json(args: &Args) -> CollectStats {
-    let mut cs = CollectStats {
-        start_date: Utc::now(),
-        projects_in_rss: 0,
-    };
+    let start_date = Utc::now();
+    let mut projects_in_rss = 0;
     match get_rss() {
         Ok(rss) => match parse_rss_from_str(&rss) {
             Ok(channel) => {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
-                cs.projects_in_rss = items.len() as u32;
+                projects_in_rss = items.len() as u32;
                 for item in items.iter().take(limit) {
                     debug!("Title: {}", item.title().unwrap_or("No title"));
                     debug!("Link: {}", item.link().unwrap_or("No link"));
@@ -342,7 +341,13 @@ fn download_project_json(args: &Args) -> CollectStats {
         Err(e) => error!("Error fetching RSS feed: {}", e),
     }
 
-    cs
+    let end_date = Utc::now();
+    let elapsed_time = (end_date - start_date).num_seconds();
+    CollectStats {
+        start_date: start_date,
+        projects_in_rss: projects_in_rss,
+        elapsed_time: elapsed_time,
+    }
 }
 
 pub fn parse_rss_from_str(rss_str: &str) -> Result<Channel, Box<dyn std::error::Error>> {
