@@ -3,6 +3,7 @@ use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -10,6 +11,8 @@ use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use tracing::{Level, debug, error, info};
 use tracing_subscriber::FmtSubscriber;
+
+const PAGE_SIZE: usize = 10;
 
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
@@ -54,7 +57,7 @@ pub struct UrlInfo {
     pub filename: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct MyProject {
     pub name: String,
     pub version: String,
@@ -74,9 +77,19 @@ pub struct CollectStats {
 }
 
 #[derive(Debug, Serialize)]
+pub struct LicenseReport {
+    licenses: HashMap<String, u32>,
+    no_license_count: u32,
+    recent_no_license_projects: Vec<MyProject>,
+    bad_license_count: u32,
+    recent_bad_license_projects: Vec<MyProject>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Report {
-    pub total: usize,
+    total: usize,
     recent_projects: Vec<MyProject>,
+    license: LicenseReport,
 }
 
 pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
@@ -191,13 +204,14 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     let projects = load_all_projects(pypi_dir)?;
     let total_projects = projects.len();
 
-    let PAGE_SIZE: usize = 10;
     let pages_size = total_projects.min(PAGE_SIZE);
+    let lr = create_license_report(&projects);
 
     // Create the report
     let report = Report {
         total: total_projects,
         recent_projects: projects.into_iter().take(pages_size).collect(),
+        license: lr,
     };
     let report_json = serde_json::to_string_pretty(&report)?;
 
@@ -209,6 +223,73 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+}
+
+fn create_license_report(projects: &[MyProject]) -> LicenseReport {
+    let mut lr = LicenseReport {
+        licenses: HashMap::from([
+            (String::from("ASL"), 0),
+            (String::from("AFL-3.0"), 0),
+            (String::from("AGPL"), 0),
+            (String::from("AGPL-3"), 0),
+            (String::from("AGPL-3.0-only"), 0),
+            (String::from("Apache"), 0),
+            (String::from("Apache-2.0"), 0),
+            (String::from("Apache 2"), 0),
+            (String::from("Apache 2.0"), 0),
+            (String::from("Apache 2.0 license"), 0),
+            (String::from("Apache 2.0 License"), 0),
+            (String::from("Apache License 2.0"), 0),
+            (String::from("BSD-2-Clause"), 0),
+            (String::from("BSD-3-Clause"), 0),
+            (String::from("LGPL-3"), 0),
+            (String::from("CC BY-NC-SA 4.0"), 0),
+            (String::from("GNU"), 0),
+            (String::from("GNU GPL v3.0"), 0),
+            (String::from("GPL-2.0-or-later"), 0),
+            (String::from("GPL-3.0-or-later"), 0),
+            (String::from("GPL-3.0-only"), 0),
+            (String::from("GPLv3+"), 0),
+            (String::from("MIT"), 0),
+            (String::from("MIT License"), 0),
+            (String::from("MIT OR Apache-2.0"), 0),
+            (String::from("Proprietary"), 0),
+        ]),
+        no_license_count: 0,
+        recent_no_license_projects: vec![],
+        bad_license_count: 0,
+        recent_bad_license_projects: vec![],
+    };
+
+    for project in projects.iter() {
+        if project.license.is_none() {
+            lr.no_license_count += 1;
+            if lr.recent_no_license_projects.len() < PAGE_SIZE {
+                lr.recent_no_license_projects.push(project.clone());
+            }
+            continue;
+        }
+
+        let license = project.license.as_ref().unwrap().trim().to_string();
+        if lr.licenses.contains_key(&license) {
+            *lr.licenses.get_mut(&license).unwrap() += 1;
+            continue;
+        }
+
+        if license.len() < 20 {
+            info!(
+                "Unrecognized license '{}' in project {}",
+                license, project.name
+            );
+        } else {
+            info!("Unrecognized long license in project {}", project.name);
+        }
+        lr.bad_license_count += 1;
+        if lr.recent_bad_license_projects.len() < PAGE_SIZE {
+            lr.recent_bad_license_projects.push(project.clone());
+        }
+    }
+    lr
 }
 
 fn load_all_projects(pypi_dir: &Path) -> Result<Vec<MyProject>, Box<dyn std::error::Error>> {
