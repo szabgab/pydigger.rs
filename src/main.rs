@@ -63,6 +63,11 @@ pub struct MyProject {
     pub version: String,
     pub summary: Option<String>,
     pub license: Option<String>,
+    home_page: Option<String>,
+    maintainer: Option<String>,
+    maintainer_email: Option<String>,
+    author: Option<String>,
+    author_email: Option<String>,
 
     #[serde(with = "ts_seconds")]
     pub_date: DateTime<Utc>,
@@ -391,6 +396,11 @@ fn download_project_json(args: &Args) -> CollectStats {
                                             summary: project.info.summary.clone(),
                                             license: project.info.license.clone(),
                                             pub_date: pub_date,
+                                            home_page: project.info.home_page.clone(),
+                                            maintainer: project.info.maintainer.clone(),
+                                            maintainer_email: project.info.maintainer_email.clone(),
+                                            author: project.info.author.clone(),
+                                            author_email: project.info.author_email.clone(),
                                         };
                                         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
                                             error!("Error saving myproject JSON to file: {}", e);
