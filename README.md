@@ -49,6 +49,7 @@ Collect
 * Save how many were in the RSS feed in the most recent run.
 * Save the start time of data collection.
 * Save elapsed time of data collection.
+* Collect more fields.
 * ----
 * Save how many projects were download in the most recent run
 * In the current run cache the names of the projects we see and only download each one once - this will be more important when we move to async.
@@ -59,5 +60,13 @@ Report
 * Show the total number of packages.
 * List the N most recent packages.
 * Create stats page with list of licenses, show a pre-defined list of licenses. List of projects with other licenses, list of projects without license.
+* Use the `home_page` to create stats page with list of VCS hosts, how many projects use each host. List the projects that has unrecognized VCS. List project without VCS.
 * ----
+* Use sources other than `home_page` for the VCS report
 * For each package create its own page
+
+
+Other:
+* Create a favicon
+* Improve the design,
+* Start using the production version of Vue.

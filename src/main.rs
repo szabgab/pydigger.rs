@@ -9,6 +9,7 @@ use std::path::Path;
 
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
+use git_digger::Repository;
 use tracing::{Level, debug, error, info};
 use tracing_subscriber::FmtSubscriber;
 
@@ -82,6 +83,15 @@ pub struct CollectStats {
 }
 
 #[derive(Debug, Serialize)]
+pub struct VCSReport {
+    hosts: HashMap<String, u32>,
+    no_vcs_count: u32,
+    recent_no_vcs_projects: Vec<MyProject>,
+    bad_vcs_count: u32,
+    recent_bad_vcs_projects: Vec<MyProject>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct LicenseReport {
     licenses: HashMap<String, u32>,
     no_license_count: u32,
@@ -95,6 +105,7 @@ pub struct Report {
     total: usize,
     recent_projects: Vec<MyProject>,
     license: LicenseReport,
+    vcs: VCSReport,
 }
 
 pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
@@ -211,12 +222,14 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
 
     let pages_size = total_projects.min(PAGE_SIZE);
     let lr = create_license_report(&projects);
+    let vcs = create_vcs_report(&projects);
 
     // Create the report
     let report = Report {
         total: total_projects,
         recent_projects: projects.into_iter().take(pages_size).collect(),
         license: lr,
+        vcs: vcs,
     };
     let report_json = serde_json::to_string_pretty(&report)?;
 
@@ -228,6 +241,52 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+}
+
+fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
+    let mut vr = VCSReport {
+        hosts: HashMap::new(),
+        no_vcs_count: 0,
+        recent_no_vcs_projects: vec![],
+        bad_vcs_count: 0,
+        recent_bad_vcs_projects: vec![],
+    };
+
+    for project in projects.iter() {
+        if project.home_page.is_none() {
+            vr.no_vcs_count += 1;
+            if vr.recent_no_vcs_projects.len() < PAGE_SIZE {
+                vr.recent_no_vcs_projects.push(project.clone());
+            }
+            continue;
+        }
+
+        let home_page = project.home_page.as_ref().unwrap().trim().to_string();
+        // Here you would add logic to classify the home_page into known VCS hosts
+        // use Repository from git_digger crate to help with this
+        match Repository::from_url(&home_page) {
+            Ok(repo) => {
+                if repo.is_github() {
+                    *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
+                } else if repo.is_gitlab() {
+                    *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
+                } else {
+                    *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
+                }
+            }
+            Err(_) => {
+                info!(
+                    "Unrecognized VCS '{}' in project {}",
+                    home_page, project.name
+                );
+                vr.bad_vcs_count += 1;
+                if vr.recent_bad_vcs_projects.len() < PAGE_SIZE {
+                    vr.recent_bad_vcs_projects.push(project.clone());
+                }
+            }
+        }
+    }
+    vr
 }
 
 fn create_license_report(projects: &[MyProject]) -> LicenseReport {
