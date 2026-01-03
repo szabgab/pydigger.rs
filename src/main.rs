@@ -133,13 +133,28 @@ pub struct Args {
     pub log: Option<tracing::Level>,
 }
 /// Downloads the JSON metadata for a PyPI project given its name and version
-pub fn download_json_for_project(
-    name: &str,
-    version: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub fn download_json_for_project(name: &str, version: &str, pub_date: DateTime<Utc>) {
     let url = format!("https://pypi.org/pypi/{}/{}/json", name, version);
-    let response = reqwest::blocking::get(&url)?.text()?;
-    Ok(response)
+    match reqwest::blocking::get(&url) {
+        Ok(response) => {
+            match response.text() {
+                Ok(json) => {
+                    // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
+                    //     error!("Error saving JSON to file: {}", e);
+                    // });
+                    match parse_pypi_json(&json) {
+                        Ok(project) => handle_project_download(&project, pub_date),
+                        Err(err) => error!("Error parsing JSON: {}", err),
+                    }
+                }
+                Err(err) => error!(
+                    "Error while downloading JSON for {} {}: {}",
+                    name, version, err
+                ),
+            }
+        }
+        Err(err) => error!("Error downloading JSON for {} {}: {}", name, version, err),
+    }
 }
 /// Extracts (name, version) from PyPI project links of the format https://pypi.org/project/NAME/VERSION/
 pub fn extract_name_version(link: &str) -> Option<(String, String)> {
@@ -444,18 +459,7 @@ fn download_project_json(args: &Args) -> CollectStats {
                             }
                         };
 
-                        match download_json_for_project(&name, &version) {
-                            Ok(json) => {
-                                // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
-                                //     error!("Error saving JSON to file: {}", e);
-                                // });
-                                match parse_pypi_json(&json) {
-                                    Ok(project) => handle_project_download(&project, pub_date),
-                                    Err(e) => error!("Error parsing JSON: {}", e),
-                                }
-                            }
-                            Err(e) => error!("Error downloading JSON: {}", e),
-                        }
+                        download_json_for_project(&name, &version, pub_date);
                     }
                 }
             }
