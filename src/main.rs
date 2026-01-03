@@ -13,7 +13,7 @@ use git_digger::Repository;
 use tracing::{Level, debug, error, info};
 use tracing_subscriber::FmtSubscriber;
 
-const PAGE_SIZE: usize = 10;
+const PAGE_SIZE: usize = 50;
 
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
