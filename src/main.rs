@@ -116,7 +116,11 @@ pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error>
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Args {
-    /// Limit the number of iterations
+    /// Download the metadata from the latest projects on PyPI
+    #[arg(long)]
+    pub download: bool,
+
+    /// Limit the number of projets to download (used mostly during development)
     #[arg(long)]
     pub limit: Option<usize>,
 
@@ -124,9 +128,7 @@ pub struct Args {
     #[arg(long)]
     pub report: bool,
 
-    #[arg(long)]
-    pub download: bool,
-
+    /// Set the logging level (e.g., ERROR, WARN, INFO, DEBUG, TRACE)
     #[arg(long)]
     pub log: Option<tracing::Level>,
 }
