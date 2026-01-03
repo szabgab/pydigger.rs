@@ -450,44 +450,7 @@ fn download_project_json(args: &Args) -> CollectStats {
                                 //     error!("Error saving JSON to file: {}", e);
                                 // });
                                 match parse_pypi_json(&json) {
-                                    Ok(project) => {
-                                        let my_project = MyProject {
-                                            name: project.info.name.clone(),
-                                            version: project.info.version.clone(),
-                                            summary: project.info.summary.clone(),
-                                            license: project.info.license.clone(),
-                                            pub_date: pub_date,
-                                            home_page: project.info.home_page.clone(),
-                                            maintainer: project.info.maintainer.clone(),
-                                            maintainer_email: project.info.maintainer_email.clone(),
-                                            author: project.info.author.clone(),
-                                            author_email: project.info.author_email.clone(),
-                                        };
-                                        save_my_project_to_file(&my_project).unwrap_or_else(|e| {
-                                            error!("Error saving myproject JSON to file: {}", e);
-                                        });
-
-                                        debug!("Project Name: {}", project.info.name);
-                                        debug!("Version: {}", project.info.version);
-                                        if let Some(author) = &project.info.author {
-                                            debug!("Author: {}", author);
-                                        }
-                                        if let Some(summary) = &project.info.summary {
-                                            debug!("Summary: {}", summary);
-                                        }
-                                        if let Some(home_page) = &project.info.home_page {
-                                            debug!("Home Page: {}", home_page);
-                                        }
-                                        if let Some(license) = &project.info.license {
-                                            debug!("License: {}", license);
-                                        }
-                                        if let Some(requires_dist) = &project.info.requires_dist {
-                                            debug!("Requires Dist: {:?}", requires_dist);
-                                        }
-                                        if let Some(download_url) = &project.info.download_url {
-                                            debug!("Download URL: {}", download_url);
-                                        }
-                                    }
+                                    Ok(project) => handle_project_download(&project, pub_date),
                                     Err(e) => error!("Error parsing JSON: {}", e),
                                 }
                             }
@@ -507,6 +470,45 @@ fn download_project_json(args: &Args) -> CollectStats {
         start_date: start_date,
         projects_in_rss: projects_in_rss,
         elapsed_time: elapsed_time,
+    }
+}
+
+fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
+    let my_project = MyProject {
+        name: project.info.name.clone(),
+        version: project.info.version.clone(),
+        summary: project.info.summary.clone(),
+        license: project.info.license.clone(),
+        pub_date: pub_date,
+        home_page: project.info.home_page.clone(),
+        maintainer: project.info.maintainer.clone(),
+        maintainer_email: project.info.maintainer_email.clone(),
+        author: project.info.author.clone(),
+        author_email: project.info.author_email.clone(),
+    };
+    save_my_project_to_file(&my_project).unwrap_or_else(|e| {
+        error!("Error saving myproject JSON to file: {}", e);
+    });
+
+    debug!("Project Name: {}", project.info.name);
+    debug!("Version: {}", project.info.version);
+    if let Some(author) = &project.info.author {
+        debug!("Author: {}", author);
+    }
+    if let Some(summary) = &project.info.summary {
+        debug!("Summary: {}", summary);
+    }
+    if let Some(home_page) = &project.info.home_page {
+        debug!("Home Page: {}", home_page);
+    }
+    if let Some(license) = &project.info.license {
+        debug!("License: {}", license);
+    }
+    if let Some(requires_dist) = &project.info.requires_dist {
+        debug!("Requires Dist: {:?}", requires_dist);
+    }
+    if let Some(download_url) = &project.info.download_url {
+        debug!("Download URL: {}", download_url);
     }
 }
 
