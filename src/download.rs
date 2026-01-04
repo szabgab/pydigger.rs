@@ -1,4 +1,4 @@
-use crate::{report, Args, MyProject};
+use crate::{Args, MyProject, report};
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use reqwest::blocking::get;

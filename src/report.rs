@@ -1,4 +1,4 @@
-use crate::{LicenseReport, MyProject, Report, VCSReport, PAGE_SIZE};
+use crate::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
 use git_digger::Repository;
 use std::collections::HashMap;
 use std::fs;
