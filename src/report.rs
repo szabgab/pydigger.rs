@@ -1,5 +1,5 @@
-use crate::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
 use git_digger::Repository;
+use pydigger::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

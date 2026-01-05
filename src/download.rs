@@ -1,5 +1,6 @@
-use crate::{Args, MyProject, report};
+use crate::{Args, report};
 use chrono::{DateTime, Utc};
+use pydigger::MyProject;
 use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
