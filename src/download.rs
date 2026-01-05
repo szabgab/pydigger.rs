@@ -190,41 +190,7 @@ pub fn download_project_json(args: &Args) -> CollectStats {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
                 projects_in_rss = items.len() as u32;
-                for item in items.iter().take(limit) {
-                    debug!("Title: {}", item.title().unwrap_or("No title"));
-                    debug!("Link: {}", item.link().unwrap_or("No link"));
-
-                    let pub_date = if let Some(pub_date) = item.pub_date() {
-                        debug!("Publication Date: {pub_date}");
-                        match chrono::DateTime::parse_from_rfc2822(pub_date)
-                            .map(|dt| dt.with_timezone(&chrono::Utc))
-                        {
-                            Ok(parsed_date) => {
-                                debug!("Parsed date: {}", parsed_date);
-                                parsed_date
-                            }
-                            Err(e) => {
-                                error!("Error parsing date '{}': {}", pub_date, e);
-                                continue;
-                            }
-                        }
-                    } else {
-                        error!("No publication date found");
-                        continue;
-                    };
-
-                    if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
-                        //println!("Extracted Name: {}, Version: {}", name, version);
-                        // Only download the json if we don't have it already
-                        if let Ok(saved_project) = load_mt_project_from_file(&name)
-                            && saved_project.pub_date >= pub_date {
-                                info!("Project {} is up to date, skipping download.", name);
-                                continue;
-                            };
-
-                        download_json_for_project(&name, &version, pub_date);
-                    }
-                }
+                process_items(&items, limit);
             }
             Err(e) => error!("Error parsing RSS feed: {}", e),
         },
@@ -237,6 +203,45 @@ pub fn download_project_json(args: &Args) -> CollectStats {
         start_date,
         projects_in_rss,
         elapsed_time,
+    }
+}
+fn process_items(items: &[rss::Item], limit: usize) {
+    for item in items.iter().take(limit) {
+        info!("Item: {}", item.link().unwrap_or("No link"));
+        debug!("Title: {}", item.title().unwrap_or("No title"));
+        debug!("Link: {}", item.link().unwrap_or("No link"));
+
+        let pub_date = if let Some(pub_date) = item.pub_date() {
+            debug!("Publication Date: {pub_date}");
+            match chrono::DateTime::parse_from_rfc2822(pub_date)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+            {
+                Ok(parsed_date) => {
+                    debug!("Parsed date: {}", parsed_date);
+                    parsed_date
+                }
+                Err(e) => {
+                    error!("Error parsing date '{}': {}", pub_date, e);
+                    continue;
+                }
+            }
+        } else {
+            error!("No publication date found");
+            continue;
+        };
+
+        if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
+            //println!("Extracted Name: {}, Version: {}", name, version);
+            // Only download the json if we don't have it already
+            if let Ok(saved_project) = load_mt_project_from_file(&name)
+                && saved_project.pub_date >= pub_date
+            {
+                info!("Project {} is up to date, skipping download.", name);
+                continue;
+            };
+
+            download_json_for_project(&name, &version, pub_date);
+        }
     }
 }
 
