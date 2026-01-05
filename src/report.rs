@@ -1,8 +1,8 @@
 use git_digger::Repository;
 use pydigger::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::{collections::HashMap};
 use tracing::{error, info};
 
 pub fn get_pypi_path() -> String {
