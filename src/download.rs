@@ -1,6 +1,6 @@
 use crate::{Args, report};
 use chrono::{DateTime, Utc};
-use pydigger::MyProject;
+use pydigger::{MyProject, ProjectUrls};
 use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
@@ -47,7 +47,6 @@ pub struct Info {
     pub platform: Option<String>,
     #[allow(dead_code)]
     pub project_url: Option<String>,
-    #[allow(dead_code)]
     pub project_urls: Option<serde_json::Map<String, serde_json::Value>>,
     #[allow(dead_code)]
     pub release_url: Option<String>,
@@ -209,7 +208,6 @@ fn process_items(items: &[rss::Item], limit: usize) {
     for item in items.iter().take(limit) {
         info!("Item: {}", item.link().unwrap_or("No link"));
         debug!("Title: {}", item.title().unwrap_or("No title"));
-        debug!("Link: {}", item.link().unwrap_or("No link"));
 
         let pub_date = if let Some(pub_date) = item.pub_date() {
             debug!("Publication Date: {pub_date}");
@@ -246,6 +244,38 @@ fn process_items(items: &[rss::Item], limit: usize) {
 }
 
 fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
+    info!("Handle project download: {}", project.info.name);
+
+    let mut project_urls = ProjectUrls {
+        homepage: None,
+        repository: None,
+        github: None,
+    };
+    // TODO: collect the various project URLs so we can learn what names do people use
+    // I've seen:
+    // Homepage, Issues, Repository, Source, Documentation, Github, API Documentation
+    // TODO: What are the rules?
+    match &project.info.project_urls {
+        Some(urls) => {
+            for (key, value) in urls {
+                info!("Project URL - {}: {}", key, value);
+                if key == "Homepage" {
+                    let value = value.as_str().unwrap_or("").to_string();
+                    project_urls.homepage = Some(value);
+                }
+                if key == "Repository" {
+                    let value = value.as_str().unwrap_or("").to_string();
+                    project_urls.repository = Some(value);
+                }
+                if key == "Github" {
+                    let value = value.as_str().unwrap_or("").to_string();
+                    project_urls.github = Some(value);
+                }
+            }
+        }
+        None => {}
+    }
+
     let my_project = MyProject {
         name: project.info.name.clone(),
         version: project.info.version.clone(),
@@ -257,7 +287,9 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
         maintainer_email: project.info.maintainer_email.clone(),
         author: project.info.author.clone(),
         author_email: project.info.author_email.clone(),
+        project_urls: Some(project_urls),
     };
+
     save_my_project_to_file(&my_project).unwrap_or_else(|e| {
         error!("Error saving myproject JSON to file: {}", e);
     });

@@ -6,6 +6,13 @@ use std::collections::HashMap;
 pub const PAGE_SIZE: usize = 50;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct ProjectUrls {
+    pub homepage: Option<String>,
+    pub repository: Option<String>,
+    pub github: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct MyProject {
     pub name: String,
     pub version: String,
@@ -19,6 +26,7 @@ pub struct MyProject {
 
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
+    pub project_urls: Option<ProjectUrls>,
 }
 
 #[derive(Debug, Serialize)]

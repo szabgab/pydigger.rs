@@ -1,8 +1,8 @@
 use git_digger::Repository;
 use pydigger::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::{collections::HashMap};
 use tracing::{error, info};
 
 pub fn get_pypi_path() -> String {
@@ -52,36 +52,60 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
     };
 
     for project in projects.iter() {
-        if project.home_page.is_none() {
+        info!("Processing project {} for VCS report", project.name);
+
+        // TODO: Where does the project store the VCS URL?
+        // There can be several names in project_urls and some use the home_page field for that.
+        // We should report if the porject uses the "old way" or if it uses multiple ways.
+        // For now let's check several
+        let url = match &project.project_urls {
+            Some(urls) => urls
+                .repository
+                .as_ref()
+                .or_else(|| urls.github.as_ref().or_else(|| urls.homepage.as_ref())),
+            None => project.home_page.as_ref(),
+        };
+
+        if url.is_none() {
             vr.no_vcs_count += 1;
             if vr.recent_no_vcs_projects.len() < PAGE_SIZE {
                 vr.recent_no_vcs_projects.push(project.clone());
             }
             continue;
         }
+        info!("Checking VCS URL for project {}: {:?}", project.name, url);
 
-        let home_page = project.home_page.as_ref().unwrap().trim().to_string();
-        // Here you would add logic to classify the home_page into known VCS hosts
+        // Here you would add logic to classify the url into known VCS hosts
         // use Repository from git_digger crate to help with this
-        match Repository::from_url(&home_page) {
-            Ok(repo) => {
-                if repo.is_github() {
-                    *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
-                } else if repo.is_gitlab() {
-                    *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
-                } else {
-                    *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
+        match url {
+            Some(url) => {
+                let url = url.trim().to_string();
+                match Repository::from_url(&url) {
+                    Ok(repo) => {
+                        if repo.is_github() {
+                            *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
+                        } else if repo.is_gitlab() {
+                            *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
+                        } else {
+                            *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
+                        }
+                    }
+                    Err(_) => {
+                        info!("Unrecognized VCS '{}' in project {}", url, project.name);
+                        vr.bad_vcs_count += 1;
+                        if vr.recent_bad_vcs_projects.len() < PAGE_SIZE {
+                            vr.recent_bad_vcs_projects.push(project.clone());
+                        }
+                        continue;
+                    }
                 }
             }
-            Err(_) => {
-                info!(
-                    "Unrecognized VCS '{}' in project {}",
-                    home_page, project.name
-                );
-                vr.bad_vcs_count += 1;
-                if vr.recent_bad_vcs_projects.len() < PAGE_SIZE {
-                    vr.recent_bad_vcs_projects.push(project.clone());
+            None => {
+                vr.no_vcs_count += 1;
+                if vr.recent_no_vcs_projects.len() < PAGE_SIZE {
+                    vr.recent_no_vcs_projects.push(project.clone());
                 }
+                continue;
             }
         }
     }
