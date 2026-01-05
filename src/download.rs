@@ -13,7 +13,9 @@ use chrono::serde::ts_seconds;
 #[derive(Debug, Deserialize)]
 pub struct PyPiProject {
     pub info: Info,
+    #[allow(dead_code)]
     pub urls: Option<Vec<UrlInfo>>, // If present in other samples
+    #[allow(dead_code)]
     pub releases: Option<serde_json::Value>, // For flexibility
 }
 
@@ -21,35 +23,52 @@ pub struct PyPiProject {
 pub struct Info {
     pub author: Option<String>,
     pub author_email: Option<String>,
+    #[allow(dead_code)]
     pub bugtrack_url: Option<String>,
+    #[allow(dead_code)]
     pub classifiers: Vec<String>,
+    #[allow(dead_code)]
     pub description: String,
+    #[allow(dead_code)]
     pub description_content_type: Option<String>,
+    #[allow(dead_code)]
     pub docs_url: Option<String>,
     pub download_url: Option<String>,
     pub home_page: Option<String>,
+    #[allow(dead_code)]
     pub keywords: Option<String>,
     pub license: Option<String>,
     pub maintainer: Option<String>,
     pub maintainer_email: Option<String>,
     pub name: String,
+    #[allow(dead_code)]
     pub package_url: Option<String>,
+    #[allow(dead_code)]
     pub platform: Option<String>,
+    #[allow(dead_code)]
     pub project_url: Option<String>,
+    #[allow(dead_code)]
     pub project_urls: Option<serde_json::Map<String, serde_json::Value>>,
+    #[allow(dead_code)]
     pub release_url: Option<String>,
     pub requires_dist: Option<Vec<String>>,
+    #[allow(dead_code)]
     pub requires_python: Option<String>,
     pub summary: Option<String>,
     pub version: String,
+    #[allow(dead_code)]
     pub yanked: Option<bool>,
+    #[allow(dead_code)]
     pub yanked_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UrlInfo {
+    #[allow(dead_code)]
     pub url: String,
+    #[allow(dead_code)]
     pub packagetype: Option<String>,
+    #[allow(dead_code)]
     pub filename: Option<String>,
 }
 
@@ -135,6 +154,7 @@ pub fn save_my_project_to_file(project: &MyProject) -> Result<(), Box<dyn std::e
 }
 
 /// Saves the JSON metadata to a file in get_pypi_path()/$name/$version.json
+#[allow(dead_code)]
 pub fn save_json_to_file(
     name: &str,
     version: &str,
@@ -196,12 +216,11 @@ pub fn download_project_json(args: &Args) -> CollectStats {
                     if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
                         //println!("Extracted Name: {}, Version: {}", name, version);
                         // Only download the json if we don't have it already
-                        if let Ok(saved_project) = load_mt_project_from_file(&name) {
-                            if saved_project.pub_date >= pub_date {
+                        if let Ok(saved_project) = load_mt_project_from_file(&name)
+                            && saved_project.pub_date >= pub_date {
                                 info!("Project {} is up to date, skipping download.", name);
                                 continue;
-                            }
-                        };
+                            };
 
                         download_json_for_project(&name, &version, pub_date);
                     }
@@ -215,9 +234,9 @@ pub fn download_project_json(args: &Args) -> CollectStats {
     let end_date = Utc::now();
     let elapsed_time = (end_date - start_date).num_seconds();
     CollectStats {
-        start_date: start_date,
-        projects_in_rss: projects_in_rss,
-        elapsed_time: elapsed_time,
+        start_date,
+        projects_in_rss,
+        elapsed_time,
     }
 }
 
@@ -227,7 +246,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
         version: project.info.version.clone(),
         summary: project.info.summary.clone(),
         license: project.info.license.clone(),
-        pub_date: pub_date,
+        pub_date,
         home_page: project.info.home_page.clone(),
         maintainer: project.info.maintainer.clone(),
         maintainer_email: project.info.maintainer_email.clone(),

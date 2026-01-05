@@ -28,7 +28,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
         total: total_projects,
         recent_projects: projects.into_iter().take(pages_size).collect(),
         license: lr,
-        vcs: vcs,
+        vcs,
     };
     let report_json = serde_json::to_string_pretty(&report)?;
 
@@ -172,7 +172,7 @@ fn load_all_projects(pypi_dir: &Path) -> Result<Vec<MyProject>, Box<dyn std::err
                 let file_entry = file_entry?;
                 let file_path = file_entry.path();
 
-                if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
+                if file_path.is_file() && file_path.extension().is_some_and(|ext| ext == "json") {
                     // Verify it's a valid JSON file by trying to parse it
                     match fs::read_to_string(&file_path) {
                         Ok(json_content) => {
