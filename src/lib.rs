@@ -18,6 +18,7 @@ pub struct MyProject {
     pub version: String,
     pub summary: Option<String>,
     pub license: Option<String>,
+    pub license_expression: Option<String>,
     pub home_page: Option<String>,
     pub maintainer: Option<String>,
     pub maintainer_email: Option<String>,

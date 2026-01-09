@@ -149,7 +149,13 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
     };
 
     for project in projects.iter() {
-        if project.license.is_none() {
+        // Prefer license_expression over legacy license field
+        let license_value = project
+            .license_expression
+            .as_ref()
+            .or(project.license.as_ref());
+
+        if license_value.is_none() {
             lr.no_license_count += 1;
             if lr.recent_no_license_projects.len() < PAGE_SIZE {
                 lr.recent_no_license_projects.push(project.clone());
@@ -157,7 +163,7 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
             continue;
         }
 
-        let license = project.license.as_ref().unwrap().trim().to_string();
+        let license = license_value.unwrap().trim().to_string();
         if lr.licenses.contains_key(&license) {
             *lr.licenses.get_mut(&license).unwrap() += 1;
             continue;

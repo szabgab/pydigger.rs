@@ -38,6 +38,7 @@ pub struct Info {
     #[allow(dead_code)]
     pub keywords: Option<String>,
     pub license: Option<String>,
+    pub license_expression: Option<String>,
     pub maintainer: Option<String>,
     pub maintainer_email: Option<String>,
     pub name: String,
@@ -281,6 +282,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
         version: project.info.version.clone(),
         summary: project.info.summary.clone(),
         license: project.info.license.clone(),
+        license_expression: project.info.license_expression.clone(),
         pub_date,
         home_page: project.info.home_page.clone(),
         maintainer: project.info.maintainer.clone(),
