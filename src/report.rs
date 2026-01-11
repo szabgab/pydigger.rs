@@ -49,6 +49,8 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         recent_no_vcs_projects: vec![],
         bad_vcs_count: 0,
         recent_bad_vcs_projects: vec![],
+        recent_github_projects: vec![],
+        recent_gitlab_projects: vec![],
     };
 
     for project in projects.iter() {
@@ -84,8 +86,14 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                     Ok(repo) => {
                         if repo.is_github() {
                             *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
+                            if vr.recent_github_projects.len() < PAGE_SIZE {
+                                vr.recent_github_projects.push(project.clone());
+                            }
                         } else if repo.is_gitlab() {
                             *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
+                            if vr.recent_gitlab_projects.len() < PAGE_SIZE {
+                                vr.recent_gitlab_projects.push(project.clone());
+                            }
                         } else {
                             *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
                         }
