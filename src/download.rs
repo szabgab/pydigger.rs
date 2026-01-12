@@ -1,5 +1,6 @@
 use crate::{Args, report};
 use chrono::{DateTime, Utc};
+use git_digger::Repository;
 use pydigger::{MyProject, ProjectUrls};
 use regex::Regex;
 use reqwest::blocking::get;
@@ -236,7 +237,8 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
             };
         }
         let project = download_json_for_project(&name, &version)?;
-        let my_project = handle_project_download(&project, pub_date);
+        let mut my_project = handle_project_download(&project, pub_date);
+        handle_vcs(&mut my_project);
 
         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
             error!("Error saving myproject JSON to file: {}", e);
@@ -290,6 +292,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> My
         author: project.info.author.clone(),
         author_email: project.info.author_email.clone(),
         project_urls: Some(project_urls),
+        has_github_actions: None,
     };
 
     debug!("Project Name: {}", project.info.name);
@@ -325,4 +328,79 @@ pub fn get_rss() -> Result<String, Box<dyn std::error::Error>> {
     let url = "https://pypi.org/rss/updates.xml";
     let response = get(url)?.text()?;
     Ok(response)
+}
+
+fn handle_vcs(project: &mut MyProject) {
+    let temp_folder = tempfile::tempdir().unwrap();
+
+    if project.get_repository_url().is_none() {
+        return;
+    }
+    let repo_url = project.get_repository_url().unwrap();
+    match Repository::from_url(&repo_url) {
+        Ok(repo) => {
+            if repo.is_github() {
+                info!("Project {} uses GitHub.", project.name);
+                if repo.check_url() {
+                    info!(
+                        "Verified GitHub repository URL for project {}: {}",
+                        project.name, repo_url
+                    );
+                    let root = std::path::Path::new(temp_folder.path());
+                    repo.update_repository(root, true).unwrap();
+                    let path = repo.path(root);
+                    let dot_github = path.join(".github");
+                    if dot_github.exists() {
+                        info!("Project {} has a .github directory.", project.name);
+                        let workflow_dir = dot_github.join("workflows");
+                        if workflow_dir.exists() {
+                            info!("Project {} has GitHub Actions workflows.", project.name);
+                            match workflow_dir.read_dir() {
+                                Ok(entries) => {
+                                    let yaml_count = entries
+                                        .filter_map(|entry| entry.ok())
+                                        .filter(|entry| {
+                                            entry
+                                                .path()
+                                                .extension()
+                                                .and_then(|ext| ext.to_str())
+                                                .map(|ext| ext == "yml" || ext == "yaml")
+                                                .unwrap_or(false)
+                                        })
+                                        .count();
+                                    info!(
+                                        "Project {} has {} YAML workflow files.",
+                                        project.name, yaml_count
+                                    );
+                                    if yaml_count > 0 {
+                                        project.has_github_actions = Some(true);
+                                    } else {
+                                        project.has_github_actions = Some(false);
+                                    }
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Failed to read workflow directory for project {}: {}",
+                                        project.name, e
+                                    );
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    error!(
+                        "Invalid GitHub repository URL for project {}: {}",
+                        project.name, repo_url
+                    );
+                }
+            } else if repo.is_gitlab() {
+                info!("Project {} uses GitLab.", project.name);
+            } else {
+                debug!("Project {} uses other VCS host.", project.name);
+            }
+        }
+        Err(e) => {
+            error!("Error detecting VCS host from URL '{}': {}", repo_url, e);
+        }
+    }
 }

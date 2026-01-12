@@ -28,6 +28,7 @@ pub struct MyProject {
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
     pub project_urls: Option<ProjectUrls>,
+    pub has_github_actions: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
