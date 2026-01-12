@@ -360,7 +360,7 @@ fn handle_vcs(project: &mut MyProject) {
                     }
                 } else {
                     error!(
-                        "Invalid GitHub repository URL for project {}: {}",
+                        "GitHub Repository URL {} for project {} does not respond well.",
                         project.name, repo_url
                     );
                 }
