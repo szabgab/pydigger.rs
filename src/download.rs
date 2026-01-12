@@ -237,6 +237,7 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
         }
         let project = download_json_for_project(&name, &version)?;
         let my_project = handle_project_download(&project, pub_date);
+
         save_my_project_to_file(&my_project).unwrap_or_else(|e| {
             error!("Error saving myproject JSON to file: {}", e);
         });

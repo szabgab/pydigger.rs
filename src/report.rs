@@ -56,18 +56,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
     for project in projects.iter() {
         info!("Processing project {} for VCS report", project.name);
 
-        // TODO: Where does the project store the VCS URL?
-        // There can be several names in project_urls and some use the home_page field for that.
-        // We should report if the porject uses the "old way" or if it uses multiple ways.
-        // For now let's check several
-        let url = match &project.project_urls {
-            Some(urls) => urls
-                .repository
-                .as_ref()
-                .or_else(|| urls.github.as_ref().or_else(|| urls.homepage.as_ref())),
-            None => project.home_page.as_ref(),
-        };
-
+        let url = project.get_repository_url();
         if url.is_none() {
             vr.no_vcs_count += 1;
             if vr.recent_no_vcs_projects.len() < PAGE_SIZE {
