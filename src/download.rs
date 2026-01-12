@@ -236,11 +236,14 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
             };
         }
         let project = download_json_for_project(&name, &version)?;
-        handle_project_download(&project, pub_date);
+        let my_project = handle_project_download(&project, pub_date);
+        save_my_project_to_file(&my_project).unwrap_or_else(|e| {
+            error!("Error saving myproject JSON to file: {}", e);
+        });
     }
     Ok(())
 }
-fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
+fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
     info!("Handle project download: {}", project.info.name);
 
     let mut project_urls = ProjectUrls {
@@ -288,10 +291,6 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
         project_urls: Some(project_urls),
     };
 
-    save_my_project_to_file(&my_project).unwrap_or_else(|e| {
-        error!("Error saving myproject JSON to file: {}", e);
-    });
-
     debug!("Project Name: {}", project.info.name);
     debug!("Version: {}", project.info.version);
     if let Some(author) = &project.info.author {
@@ -312,6 +311,8 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
     if let Some(download_url) = &project.info.download_url {
         debug!("Download URL: {}", download_url);
     }
+
+    my_project
 }
 
 pub fn parse_rss_from_str(rss_str: &str) -> Result<Channel, Box<dyn std::error::Error>> {
