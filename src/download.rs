@@ -115,10 +115,12 @@ fn get_pypi_project_path(name: &str) -> String {
 }
 
 fn load_mt_project_from_file(name: &str) -> Result<MyProject, Box<dyn std::error::Error>> {
+    debug!("Loading project from file: {name}");
     let dir_path = get_pypi_project_path(name);
     let file_path = format!("{}/{}.json", dir_path, name);
 
-    let json_content = fs::read_to_string(&file_path)?;
+    let json_content = fs::read_to_string(&file_path)
+        .map_err(|err| format!("Failed to read project file '{file_path}': {err}"))?;
     let project: MyProject = serde_json::from_str(&json_content)?;
 
     Ok(project)
@@ -194,11 +196,13 @@ pub fn download_project_json(args: &Args) -> CollectStats {
 }
 fn process_items(items: &[rss::Item], limit: usize) {
     for item in items.iter().take(limit) {
-        process_item(item);
+        if let Err(err) = process_item(item) {
+            error!("Error processing item: {}", err);
+        }
     }
 }
 
-fn process_item(item: &rss::Item) {
+fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
     info!("Item: {}", item.link().unwrap_or("No link"));
     debug!("Title: {}", item.title().unwrap_or("No title"));
 
@@ -213,36 +217,28 @@ fn process_item(item: &rss::Item) {
             }
             Err(e) => {
                 error!("Error parsing date '{}': {}", pub_date, e);
-                return;
+                return Ok(());
             }
         }
     } else {
         error!("No publication date found");
-        return;
+        return Ok(());
     };
 
-    if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
+    let link = item.link().ok_or("No link found")?;
+    if let Some((name, version)) = extract_name_version(link) {
         //println!("Extracted Name: {}, Version: {}", name, version);
         // Only download the json if we don't have it already
-        if let Ok(saved_project) = load_mt_project_from_file(&name)
-            && saved_project.pub_date >= pub_date
-        {
-            info!("Project {} is up to date, skipping download.", name);
-            return;
-        };
-
-        match download_json_for_project(&name, &version) {
-            Ok(project) => {
-                handle_project_download(&project, pub_date);
-            }
-            Err(e) => {
-                error!(
-                    "Error downloading JSON for project {} version {}: {}",
-                    name, version, e
-                );
-            }
+        if let Ok(saved_project) = load_mt_project_from_file(&name) {
+            if saved_project.pub_date >= pub_date {
+                info!("Project {} is up to date, skipping download.", name);
+                return Ok(());
+            };
         }
+        let project = download_json_for_project(&name, &version)?;
+        handle_project_download(&project, pub_date);
     }
+    Ok(())
 }
 fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
     info!("Handle project download: {}", project.info.name);
