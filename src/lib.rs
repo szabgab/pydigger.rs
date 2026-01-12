@@ -40,6 +40,8 @@ pub struct VCSReport {
     pub recent_bad_vcs_projects: Vec<MyProject>,
     pub recent_github_projects: Vec<MyProject>,
     pub recent_gitlab_projects: Vec<MyProject>,
+    pub recent_no_github_actions: Vec<MyProject>,
+    pub recent_has_github_actions: Vec<MyProject>,
 }
 
 #[derive(Debug, Serialize)]

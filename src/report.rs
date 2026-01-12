@@ -51,6 +51,8 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         recent_bad_vcs_projects: vec![],
         recent_github_projects: vec![],
         recent_gitlab_projects: vec![],
+        recent_no_github_actions: vec![],
+        recent_has_github_actions: vec![],
     };
 
     for project in projects.iter() {
@@ -77,6 +79,17 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
                             if vr.recent_github_projects.len() < PAGE_SIZE {
                                 vr.recent_github_projects.push(project.clone());
+                            }
+                            if let Some(has_github_actions) = project.has_github_actions {
+                                if has_github_actions {
+                                    if vr.recent_has_github_actions.len() < PAGE_SIZE {
+                                        vr.recent_has_github_actions.push(project.clone());
+                                    }
+                                } else {
+                                    if vr.recent_no_github_actions.len() < PAGE_SIZE {
+                                        vr.recent_no_github_actions.push(project.clone());
+                                    }
+                                }
                             }
                         } else if repo.is_gitlab() {
                             *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
