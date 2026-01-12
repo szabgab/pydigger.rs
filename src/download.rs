@@ -341,6 +341,7 @@ fn handle_vcs(project: &mut MyProject) {
         Ok(repo) => {
             if repo.is_github() {
                 info!("Project {} uses GitHub.", project.name);
+                project.has_github_actions = Some(false);
                 if repo.check_url() {
                     info!(
                         "Verified GitHub repository URL for project {}: {}",
@@ -374,8 +375,6 @@ fn handle_vcs(project: &mut MyProject) {
                                     );
                                     if yaml_count > 0 {
                                         project.has_github_actions = Some(true);
-                                    } else {
-                                        project.has_github_actions = Some(false);
                                     }
                                 }
                                 Err(e) => {
