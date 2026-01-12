@@ -348,7 +348,7 @@ fn handle_vcs(project: &mut MyProject) {
                         project.name, repo_url
                     );
                     let root = std::path::Path::new(temp_folder.path());
-                    repo.update_repository(root, true).unwrap();
+                    repo.update_repository(root, true, Some(1)).unwrap();
                     let path = repo.path(root);
                     let dot_github = path.join(".github");
                     if dot_github.exists() {
