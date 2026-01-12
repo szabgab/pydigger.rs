@@ -85,28 +85,15 @@ pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error>
 }
 
 /// Downloads the JSON metadata for a PyPI project given its name and version
-pub fn download_json_for_project(name: &str, version: &str, pub_date: DateTime<Utc>) {
+pub fn download_json_for_project(
+    name: &str,
+    version: &str,
+) -> Result<PyPiProject, Box<dyn std::error::Error>> {
     let url = format!("https://pypi.org/pypi/{}/{}/json", name, version);
-    match reqwest::blocking::get(&url) {
-        Ok(response) => {
-            match response.text() {
-                Ok(json) => {
-                    // save_json_to_file(&name, &version, &json).unwrap_or_else(|e| {
-                    //     error!("Error saving JSON to file: {}", e);
-                    // });
-                    match parse_pypi_json(&json) {
-                        Ok(project) => handle_project_download(&project, pub_date),
-                        Err(err) => error!("Error parsing JSON: {}", err),
-                    }
-                }
-                Err(err) => error!(
-                    "Error while downloading JSON for {} {}: {}",
-                    name, version, err
-                ),
-            }
-        }
-        Err(err) => error!("Error downloading JSON for {} {}: {}", name, version, err),
-    }
+    let response = reqwest::blocking::get(&url)?;
+    let json = response.text()?;
+    let project = parse_pypi_json(&json)?;
+    Ok(project)
 }
 
 /// Extracts (name, version) from PyPI project links of the format https://pypi.org/project/NAME/VERSION/
@@ -239,7 +226,17 @@ fn process_items(items: &[rss::Item], limit: usize) {
                 continue;
             };
 
-            download_json_for_project(&name, &version, pub_date);
+            match download_json_for_project(&name, &version) {
+                Ok(project) => {
+                    handle_project_download(&project, pub_date);
+                }
+                Err(e) => {
+                    error!(
+                        "Error downloading JSON for project {} version {}: {}",
+                        name, version, e
+                    );
+                }
+            }
         }
     }
 }
