@@ -349,42 +349,14 @@ fn handle_vcs(project: &mut MyProject) {
                     );
                     let root = std::path::Path::new(temp_folder.path());
                     repo.update_repository(root, true, Some(1)).unwrap();
-                    let path = repo.path(root);
-                    let dot_github = path.join(".github");
-                    if dot_github.exists() {
-                        info!("Project {} has a .github directory.", project.name);
-                        let workflow_dir = dot_github.join("workflows");
-                        if workflow_dir.exists() {
-                            info!("Project {} has GitHub Actions workflows.", project.name);
-                            match workflow_dir.read_dir() {
-                                Ok(entries) => {
-                                    let yaml_count = entries
-                                        .filter_map(|entry| entry.ok())
-                                        .filter(|entry| {
-                                            entry
-                                                .path()
-                                                .extension()
-                                                .and_then(|ext| ext.to_str())
-                                                .map(|ext| ext == "yml" || ext == "yaml")
-                                                .unwrap_or(false)
-                                        })
-                                        .count();
-                                    info!(
-                                        "Project {} has {} YAML workflow files.",
-                                        project.name, yaml_count
-                                    );
-                                    if yaml_count > 0 {
-                                        project.has_github_actions = Some(true);
-                                    }
-                                }
-                                Err(e) => {
-                                    error!(
-                                        "Failed to read workflow directory for project {}: {}",
-                                        project.name, e
-                                    );
-                                }
-                            }
-                        }
+                    if repo.has_github_actions(root) {
+                        info!("Project {} has GitHub Actions configured.", project.name);
+                        project.has_github_actions = Some(true);
+                    } else {
+                        info!(
+                            "Project {} does not have GitHub Actions configured.",
+                            project.name
+                        );
                     }
                 } else {
                     error!(
