@@ -194,53 +194,56 @@ pub fn download_project_json(args: &Args) -> CollectStats {
 }
 fn process_items(items: &[rss::Item], limit: usize) {
     for item in items.iter().take(limit) {
-        info!("Item: {}", item.link().unwrap_or("No link"));
-        debug!("Title: {}", item.title().unwrap_or("No title"));
+        process_item(item);
+    }
+}
 
-        let pub_date = if let Some(pub_date) = item.pub_date() {
-            debug!("Publication Date: {pub_date}");
-            match chrono::DateTime::parse_from_rfc2822(pub_date)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-            {
-                Ok(parsed_date) => {
-                    debug!("Parsed date: {}", parsed_date);
-                    parsed_date
-                }
-                Err(e) => {
-                    error!("Error parsing date '{}': {}", pub_date, e);
-                    continue;
-                }
+fn process_item(item: &rss::Item) {
+    info!("Item: {}", item.link().unwrap_or("No link"));
+    debug!("Title: {}", item.title().unwrap_or("No title"));
+
+    let pub_date = if let Some(pub_date) = item.pub_date() {
+        debug!("Publication Date: {pub_date}");
+        match chrono::DateTime::parse_from_rfc2822(pub_date)
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+        {
+            Ok(parsed_date) => {
+                debug!("Parsed date: {}", parsed_date);
+                parsed_date
             }
-        } else {
-            error!("No publication date found");
-            continue;
+            Err(e) => {
+                error!("Error parsing date '{}': {}", pub_date, e);
+                return;
+            }
+        }
+    } else {
+        error!("No publication date found");
+        return;
+    };
+
+    if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
+        //println!("Extracted Name: {}, Version: {}", name, version);
+        // Only download the json if we don't have it already
+        if let Ok(saved_project) = load_mt_project_from_file(&name)
+            && saved_project.pub_date >= pub_date
+        {
+            info!("Project {} is up to date, skipping download.", name);
+            return;
         };
 
-        if let Some((name, version)) = extract_name_version(item.link().unwrap_or("")) {
-            //println!("Extracted Name: {}, Version: {}", name, version);
-            // Only download the json if we don't have it already
-            if let Ok(saved_project) = load_mt_project_from_file(&name)
-                && saved_project.pub_date >= pub_date
-            {
-                info!("Project {} is up to date, skipping download.", name);
-                continue;
-            };
-
-            match download_json_for_project(&name, &version) {
-                Ok(project) => {
-                    handle_project_download(&project, pub_date);
-                }
-                Err(e) => {
-                    error!(
-                        "Error downloading JSON for project {} version {}: {}",
-                        name, version, e
-                    );
-                }
+        match download_json_for_project(&name, &version) {
+            Ok(project) => {
+                handle_project_download(&project, pub_date);
+            }
+            Err(e) => {
+                error!(
+                    "Error downloading JSON for project {} version {}: {}",
+                    name, version, e
+                );
             }
         }
     }
 }
-
 fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) {
     info!("Handle project download: {}", project.info.name);
 
