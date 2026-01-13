@@ -26,7 +26,11 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     // Create the report
     let report = Report {
         total: total_projects,
-        projects: all_projects.into_iter().take(pages_size).collect(),
+        projects: all_projects
+            .into_iter()
+            .take(pages_size)
+            .map(|p| p.smaller())
+            .collect(),
         license: lr,
         vcs,
     };
@@ -66,7 +70,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         if url.is_none() {
             vr.no_vcs_count += 1;
             if vr.no_vcs_projects.len() < PAGE_SIZE {
-                vr.no_vcs_projects.push(project.clone());
+                vr.no_vcs_projects.push(project.smaller());
             }
             continue;
         }
@@ -83,18 +87,18 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
                             vr.github_count += 1;
                             if vr.github_projects.len() < PAGE_SIZE {
-                                vr.github_projects.push(project.clone());
+                                vr.github_projects.push(project.smaller());
                             }
                             if let Some(has_github_actions) = project.has_github_actions {
                                 if has_github_actions {
                                     vr.has_github_actions_count += 1;
                                     if vr.has_github_actions.len() < PAGE_SIZE {
-                                        vr.has_github_actions.push(project.clone());
+                                        vr.has_github_actions.push(project.smaller());
                                     }
                                 } else {
                                     vr.no_github_actions_count += 1;
                                     if vr.no_github_actions.len() < PAGE_SIZE {
-                                        vr.no_github_actions.push(project.clone());
+                                        vr.no_github_actions.push(project.smaller());
                                     }
                                 }
                             }
@@ -102,7 +106,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
                             vr.gitlab_count += 1;
                             if vr.gitlab_projects.len() < PAGE_SIZE {
-                                vr.gitlab_projects.push(project.clone());
+                                vr.gitlab_projects.push(project.smaller());
                             }
                         } else {
                             *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
@@ -112,7 +116,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                         info!("Unrecognized VCS '{}' in project {}", url, project.name);
                         vr.bad_vcs_count += 1;
                         if vr.bad_vcs_projects.len() < PAGE_SIZE {
-                            vr.bad_vcs_projects.push(project.clone());
+                            vr.bad_vcs_projects.push(project.smaller());
                         }
                         continue;
                     }
@@ -121,7 +125,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
             None => {
                 vr.no_vcs_count += 1;
                 if vr.no_vcs_projects.len() < PAGE_SIZE {
-                    vr.no_vcs_projects.push(project.clone());
+                    vr.no_vcs_projects.push(project.smaller());
                 }
                 continue;
             }
@@ -176,7 +180,7 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
         if license_value.is_none() {
             lr.no_license_count += 1;
             if lr.no_license_projects.len() < PAGE_SIZE {
-                lr.no_license_projects.push(project.clone());
+                lr.no_license_projects.push(project.smaller());
             }
             continue;
         }
@@ -197,7 +201,7 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
         }
         lr.bad_license_count += 1;
         if lr.bad_license_projects.len() < PAGE_SIZE {
-            lr.bad_license_projects.push(project.clone());
+            lr.bad_license_projects.push(project.smaller());
         }
     }
     lr

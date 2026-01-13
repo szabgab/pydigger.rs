@@ -31,41 +31,60 @@ pub struct MyProject {
     pub has_github_actions: Option<bool>,
 }
 
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct MyFilteredProject {
+    pub name: String,
+    pub version: String,
+    pub summary: Option<String>,
+
+    #[serde(with = "ts_seconds")]
+    pub pub_date: DateTime<Utc>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct VCSReport {
     pub hosts: HashMap<String, u32>,
     pub no_vcs_count: u32,
-    pub no_vcs_projects: Vec<MyProject>,
+    pub no_vcs_projects: Vec<MyFilteredProject>,
     pub bad_vcs_count: u32,
-    pub bad_vcs_projects: Vec<MyProject>,
+    pub bad_vcs_projects: Vec<MyFilteredProject>,
     pub github_count: u32,
-    pub github_projects: Vec<MyProject>,
+    pub github_projects: Vec<MyFilteredProject>,
     pub gitlab_count: u32,
-    pub gitlab_projects: Vec<MyProject>,
+    pub gitlab_projects: Vec<MyFilteredProject>,
     pub no_github_actions_count: u32,
-    pub no_github_actions: Vec<MyProject>,
+    pub no_github_actions: Vec<MyFilteredProject>,
     pub has_github_actions_count: u32,
-    pub has_github_actions: Vec<MyProject>,
+    pub has_github_actions: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct LicenseReport {
     pub licenses: HashMap<String, u32>,
     pub no_license_count: u32,
-    pub no_license_projects: Vec<MyProject>,
+    pub no_license_projects: Vec<MyFilteredProject>,
     pub bad_license_count: u32,
-    pub bad_license_projects: Vec<MyProject>,
+    pub bad_license_projects: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct Report {
     pub total: usize,
-    pub projects: Vec<MyProject>,
+    pub projects: Vec<MyFilteredProject>,
     pub license: LicenseReport,
     pub vcs: VCSReport,
 }
 
 impl MyProject {
+    pub fn smaller(&self) -> MyFilteredProject {
+        MyFilteredProject {
+            name: self.name.clone(),
+            version: self.version.clone(),
+            summary: self.summary.clone(),
+            pub_date: self.pub_date,
+        }
+    }
+
     pub fn get_repository_url(&self) -> Option<String> {
         // TODO: Where does the project store the VCS URL?
         // There can be several names in project_urls and some use the home_page field for that.
