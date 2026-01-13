@@ -35,28 +35,28 @@ pub struct MyProject {
 pub struct VCSReport {
     pub hosts: HashMap<String, u32>,
     pub no_vcs_count: u32,
-    pub recent_no_vcs_projects: Vec<MyProject>,
+    pub no_vcs_projects: Vec<MyProject>,
     pub bad_vcs_count: u32,
-    pub recent_bad_vcs_projects: Vec<MyProject>,
-    pub recent_github_projects: Vec<MyProject>,
-    pub recent_gitlab_projects: Vec<MyProject>,
-    pub recent_no_github_actions: Vec<MyProject>,
-    pub recent_has_github_actions: Vec<MyProject>,
+    pub bad_vcs_projects: Vec<MyProject>,
+    pub github_projects: Vec<MyProject>,
+    pub gitlab_projects: Vec<MyProject>,
+    pub no_github_actions: Vec<MyProject>,
+    pub has_github_actions: Vec<MyProject>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct LicenseReport {
     pub licenses: HashMap<String, u32>,
     pub no_license_count: u32,
-    pub recent_no_license_projects: Vec<MyProject>,
+    pub no_license_projects: Vec<MyProject>,
     pub bad_license_count: u32,
-    pub recent_bad_license_projects: Vec<MyProject>,
+    pub bad_license_projects: Vec<MyProject>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct Report {
     pub total: usize,
-    pub recent_projects: Vec<MyProject>,
+    pub projects: Vec<MyProject>,
     pub license: LicenseReport,
     pub vcs: VCSReport,
 }
