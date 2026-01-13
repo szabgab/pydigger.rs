@@ -38,9 +38,13 @@ pub struct VCSReport {
     pub no_vcs_projects: Vec<MyProject>,
     pub bad_vcs_count: u32,
     pub bad_vcs_projects: Vec<MyProject>,
+    pub github_count: u32,
     pub github_projects: Vec<MyProject>,
+    pub gitlab_count: u32,
     pub gitlab_projects: Vec<MyProject>,
+    pub no_github_actions_count: u32,
     pub no_github_actions: Vec<MyProject>,
+    pub has_github_actions_count: u32,
     pub has_github_actions: Vec<MyProject>,
 }
 

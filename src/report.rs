@@ -49,9 +49,13 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         no_vcs_projects: vec![],
         bad_vcs_count: 0,
         bad_vcs_projects: vec![],
+        github_count: 0,
         github_projects: vec![],
+        gitlab_count: 0,
         gitlab_projects: vec![],
+        no_github_actions_count: 0,
         no_github_actions: vec![],
+        has_github_actions_count: 0,
         has_github_actions: vec![],
     };
 
@@ -77,15 +81,18 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                     Ok(repo) => {
                         if repo.is_github() {
                             *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
+                            vr.github_count += 1;
                             if vr.github_projects.len() < PAGE_SIZE {
                                 vr.github_projects.push(project.clone());
                             }
                             if let Some(has_github_actions) = project.has_github_actions {
                                 if has_github_actions {
+                                    vr.has_github_actions_count += 1;
                                     if vr.has_github_actions.len() < PAGE_SIZE {
                                         vr.has_github_actions.push(project.clone());
                                     }
                                 } else {
+                                    vr.no_github_actions_count += 1;
                                     if vr.no_github_actions.len() < PAGE_SIZE {
                                         vr.no_github_actions.push(project.clone());
                                     }
@@ -93,6 +100,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             }
                         } else if repo.is_gitlab() {
                             *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
+                            vr.gitlab_count += 1;
                             if vr.gitlab_projects.len() < PAGE_SIZE {
                                 vr.gitlab_projects.push(project.clone());
                             }
