@@ -293,6 +293,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> My
         author_email: project.info.author_email.clone(),
         project_urls: Some(project_urls),
         has_github_actions: None,
+        has_gitlab_pipeline: None,
     };
 
     debug!("Project Name: {}", project.info.name);
@@ -366,6 +367,29 @@ fn handle_vcs(project: &mut MyProject) {
                 }
             } else if repo.is_gitlab() {
                 info!("Project {} uses GitLab.", project.name);
+                project.has_gitlab_pipeline = Some(false);
+                if repo.check_url() {
+                    info!(
+                        "Verified GitLab repository URL for project {}: {}",
+                        project.name, repo_url
+                    );
+                    let root = std::path::Path::new(temp_folder.path());
+                    repo.update_repository(root, true, Some(1)).unwrap();
+                    if repo.has_gitlab_pipeline(root) {
+                        info!("Project {} has GitLab pipeline configured.", project.name);
+                        project.has_gitlab_pipeline = Some(true);
+                    } else {
+                        info!(
+                            "Project {} does not have GitLab pipeline configured.",
+                            project.name
+                        );
+                    }
+                } else {
+                    error!(
+                        "GitLab Repository URL {} for project {} does not respond well.",
+                        project.name, repo_url
+                    );
+                }
             } else {
                 debug!("Project {} uses other VCS host.", project.name);
             }

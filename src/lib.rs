@@ -29,6 +29,7 @@ pub struct MyProject {
     pub pub_date: DateTime<Utc>,
     pub project_urls: Option<ProjectUrls>,
     pub has_github_actions: Option<bool>,
+    pub has_gitlab_pipeline: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -56,6 +57,10 @@ pub struct VCSReport {
     pub no_github_actions: Vec<MyFilteredProject>,
     pub has_github_actions_count: u32,
     pub has_github_actions: Vec<MyFilteredProject>,
+    pub has_gitlab_pipeline_count: u32,
+    pub has_gitlab_pipeline: Vec<MyFilteredProject>,
+    pub no_gitlab_pipeline_count: u32,
+    pub no_gitlab_pipeline: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]

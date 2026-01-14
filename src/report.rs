@@ -61,6 +61,10 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         no_github_actions: vec![],
         has_github_actions_count: 0,
         has_github_actions: vec![],
+        has_gitlab_pipeline_count: 0,
+        has_gitlab_pipeline: vec![],
+        no_gitlab_pipeline_count: 0,
+        no_gitlab_pipeline: vec![],
     };
 
     for project in projects.iter() {
@@ -107,6 +111,19 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             vr.gitlab_count += 1;
                             if vr.gitlab_projects.len() < PAGE_SIZE {
                                 vr.gitlab_projects.push(project.smaller());
+                            }
+                            if let Some(has_gitlab_pipeline) = project.has_gitlab_pipeline {
+                                if has_gitlab_pipeline {
+                                    vr.has_gitlab_pipeline_count += 1;
+                                    if vr.has_gitlab_pipeline.len() < PAGE_SIZE {
+                                        vr.has_gitlab_pipeline.push(project.smaller());
+                                    }
+                                } else {
+                                    vr.no_gitlab_pipeline_count += 1;
+                                    if vr.no_gitlab_pipeline.len() < PAGE_SIZE {
+                                        vr.no_gitlab_pipeline.push(project.smaller());
+                                    }
+                                }
                             }
                         } else {
                             *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
