@@ -78,6 +78,9 @@ pub struct CollectStats {
     #[serde(with = "ts_seconds")]
     start_date: DateTime<Utc>,
     projects_in_rss: u32,
+    downloaded_projects: u32,
+    error_projects: u32,
+    skipped_projects: u32,
     elapsed_time: i64,
 }
 
@@ -174,13 +177,17 @@ pub fn save_download_stats(cs: CollectStats) -> Result<(), Box<dyn std::error::E
 pub fn download_project_json(args: &Args) -> CollectStats {
     let start_date = Utc::now();
     let mut projects_in_rss = 0;
+    let mut downloaded_projects = 0;
+    let mut skipped_projects = 0;
+    let mut error_projects = 0;
     match get_rss() {
         Ok(rss) => match parse_rss_from_str(&rss) {
             Ok(channel) => {
                 let items = channel.items();
                 let limit = args.limit.unwrap_or(items.len());
                 projects_in_rss = items.len() as u32;
-                process_items(&items, limit);
+                (downloaded_projects, skipped_projects, error_projects) =
+                    process_items(&items, limit);
             }
             Err(e) => error!("Error parsing RSS feed: {}", e),
         },
@@ -192,18 +199,43 @@ pub fn download_project_json(args: &Args) -> CollectStats {
     CollectStats {
         start_date,
         projects_in_rss,
+        downloaded_projects,
+        error_projects,
+        skipped_projects,
         elapsed_time,
     }
 }
-fn process_items(items: &[rss::Item], limit: usize) {
+fn process_items(items: &[rss::Item], limit: usize) -> (u32, u32, u32) {
+    let mut downloaded_projects = 0;
+    let mut skipped_projects = 0;
+    let mut error_projects = 0;
+
     for item in items.iter().take(limit) {
-        if let Err(err) = process_item(item) {
-            error!("Error processing item: {}", err);
+        match process_item(item) {
+            Ok(status) => match status {
+                Status::Success => downloaded_projects += 1,
+                Status::DateError => error_projects += 1,
+                Status::MissingDateError => error_projects += 1,
+                Status::Skipping => skipped_projects += 1,
+            },
+            Err(err) => {
+                error!("Error processing item: {}", err);
+                // count these as well
+            }
         }
     }
+
+    (downloaded_projects, skipped_projects, error_projects)
 }
 
-fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
+enum Status {
+    Success,
+    DateError,
+    MissingDateError,
+    Skipping,
+}
+
+fn process_item(item: &rss::Item) -> Result<Status, Box<dyn std::error::Error>> {
     info!("Item: {}", item.link().unwrap_or("No link"));
     debug!("Title: {}", item.title().unwrap_or("No title"));
 
@@ -218,12 +250,12 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(e) => {
                 error!("Error parsing date '{}': {}", pub_date, e);
-                return Ok(());
+                return Ok(Status::DateError);
             }
         }
     } else {
         error!("No publication date found");
-        return Ok(());
+        return Ok(Status::MissingDateError);
     };
 
     let link = item.link().ok_or("No link found")?;
@@ -233,7 +265,7 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(saved_project) = load_mt_project_from_file(&name) {
             if saved_project.pub_date >= pub_date {
                 info!("Project {} is up to date, skipping download.", name);
-                return Ok(());
+                return Ok(Status::Skipping);
             };
         }
         let project = download_json_for_project(&name, &version)?;
@@ -244,7 +276,7 @@ fn process_item(item: &rss::Item) -> Result<(), Box<dyn std::error::Error>> {
             error!("Error saving myproject JSON to file: {}", e);
         });
     }
-    Ok(())
+    Ok(Status::Success)
 }
 fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
     info!("Handle project download: {}", project.info.name);
