@@ -185,6 +185,8 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
         no_license: vec![],
         bad_license_count: 0,
         bad_license: vec![],
+        long_license_count: 0,
+        long_license: vec![],
     };
 
     for project in projects.iter() {
@@ -202,6 +204,7 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
             continue;
         }
 
+        // check if the license_value matches accepted known licenses
         let license = license_value.unwrap().trim().to_string();
         if lr.licenses.contains_key(&license) {
             *lr.licenses.get_mut(&license).unwrap() += 1;
@@ -210,15 +213,19 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
 
         if license.len() < 20 {
             info!(
-                "Unrecognized license '{}' in project {}",
+                "Unrecognized short license '{}' in project {}",
                 license, project.name
             );
+            lr.bad_license_count += 1;
+            if lr.bad_license.len() < PAGE_SIZE {
+                lr.bad_license.push(project.smaller());
+            }
         } else {
-            info!("Unrecognized long license in project {}", project.name);
-        }
-        lr.bad_license_count += 1;
-        if lr.bad_license.len() < PAGE_SIZE {
-            lr.bad_license.push(project.smaller());
+            info!("Long license in project {}", project.name);
+            lr.long_license_count += 1;
+            if lr.long_license.len() < PAGE_SIZE {
+                lr.long_license.push(project.smaller());
+            }
         }
     }
     lr

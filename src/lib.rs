@@ -70,6 +70,8 @@ pub struct LicenseReport {
     pub no_license: Vec<MyFilteredProject>,
     pub bad_license_count: u32,
     pub bad_license: Vec<MyFilteredProject>,
+    pub long_license_count: u32,
+    pub long_license: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]
