@@ -182,9 +182,9 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
             (String::from("Proprietary"), 0),
         ]),
         no_license_count: 0,
-        no_license_projects: vec![],
+        no_license: vec![],
         bad_license_count: 0,
-        bad_license_projects: vec![],
+        bad_license: vec![],
     };
 
     for project in projects.iter() {
@@ -196,8 +196,8 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
 
         if license_value.is_none() {
             lr.no_license_count += 1;
-            if lr.no_license_projects.len() < PAGE_SIZE {
-                lr.no_license_projects.push(project.smaller());
+            if lr.no_license.len() < PAGE_SIZE {
+                lr.no_license.push(project.smaller());
             }
             continue;
         }
@@ -217,8 +217,8 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
             info!("Unrecognized long license in project {}", project.name);
         }
         lr.bad_license_count += 1;
-        if lr.bad_license_projects.len() < PAGE_SIZE {
-            lr.bad_license_projects.push(project.smaller());
+        if lr.bad_license.len() < PAGE_SIZE {
+            lr.bad_license.push(project.smaller());
         }
     }
     lr

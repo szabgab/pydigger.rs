@@ -67,9 +67,9 @@ pub struct VCSReport {
 pub struct LicenseReport {
     pub licenses: HashMap<String, u32>,
     pub no_license_count: u32,
-    pub no_license_projects: Vec<MyFilteredProject>,
+    pub no_license: Vec<MyFilteredProject>,
     pub bad_license_count: u32,
-    pub bad_license_projects: Vec<MyFilteredProject>,
+    pub bad_license: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]
