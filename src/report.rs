@@ -193,6 +193,7 @@ fn create_license_report(projects: &[MyProject]) -> LicenseReport {
             (String::from("FreeBSD"), 0),
             (String::from("MPL"), 0),
             (String::from("MPL-2.0"), 0),
+            (String::from("Mulan PSL v2"), 0),
             (String::from("LGPL-2.1-or-later"), 0),
             (String::from("LGPL-3"), 0),
             (String::from("LGPLv3"), 0),
