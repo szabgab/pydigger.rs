@@ -50,9 +50,9 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
     let mut vr = VCSReport {
         hosts: HashMap::new(),
         no_vcs_count: 0,
-        no_vcs_projects: vec![],
+        no_vcs: vec![],
         bad_vcs_count: 0,
-        bad_vcs_projects: vec![],
+        bad_vcs: vec![],
         github_count: 0,
         github_projects: vec![],
         gitlab_count: 0,
@@ -73,8 +73,8 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         let url = project.get_repository_url();
         if url.is_none() {
             vr.no_vcs_count += 1;
-            if vr.no_vcs_projects.len() < PAGE_SIZE {
-                vr.no_vcs_projects.push(project.smaller());
+            if vr.no_vcs.len() < PAGE_SIZE {
+                vr.no_vcs.push(project.smaller());
             }
             continue;
         }
@@ -132,8 +132,8 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                     Err(_) => {
                         info!("Unrecognized VCS '{}' in project {}", url, project.name);
                         vr.bad_vcs_count += 1;
-                        if vr.bad_vcs_projects.len() < PAGE_SIZE {
-                            vr.bad_vcs_projects.push(project.smaller());
+                        if vr.bad_vcs.len() < PAGE_SIZE {
+                            vr.bad_vcs.push(project.smaller());
                         }
                         continue;
                     }
@@ -141,8 +141,8 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
             }
             None => {
                 vr.no_vcs_count += 1;
-                if vr.no_vcs_projects.len() < PAGE_SIZE {
-                    vr.no_vcs_projects.push(project.smaller());
+                if vr.no_vcs.len() < PAGE_SIZE {
+                    vr.no_vcs.push(project.smaller());
                 }
                 continue;
             }

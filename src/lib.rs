@@ -46,9 +46,9 @@ pub struct MyFilteredProject {
 pub struct VCSReport {
     pub hosts: HashMap<String, u32>,
     pub no_vcs_count: u32,
-    pub no_vcs_projects: Vec<MyFilteredProject>,
+    pub no_vcs: Vec<MyFilteredProject>,
     pub bad_vcs_count: u32,
-    pub bad_vcs_projects: Vec<MyFilteredProject>,
+    pub bad_vcs: Vec<MyFilteredProject>,
     pub github_count: u32,
     pub github_projects: Vec<MyFilteredProject>,
     pub gitlab_count: u32,
