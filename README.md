@@ -1,4 +1,6 @@
-# PyDigger implemented in Rust
+# [PyDigger](https://pydigger.code-maven.com/) implemented in Rust
+
+See also the source code of the [front-end](https://github.com/szabgab/pydigger-front)
 
 See [DEVELOPMENT](DEVELOPMENT.md)
 
