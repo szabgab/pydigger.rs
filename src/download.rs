@@ -266,16 +266,21 @@ fn process_item(item: &rss::Item) -> Result<Status, Box<dyn std::error::Error>> 
                 return Ok(Status::Skipping);
             };
         }
-        let project = download_json_for_project(&name, &version)?;
-        let mut my_project = handle_project_download(&project, pub_date);
-        handle_vcs(&mut my_project);
-
-        save_my_project_to_file(&my_project).unwrap_or_else(|e| {
-            error!("Error saving myproject JSON to file: {}", e);
-        });
+        handle_project(name, version, pub_date)?;
     }
     Ok(Status::Success)
 }
+
+fn handle_project(name: String, version: String, pub_date: DateTime<Utc>) -> Result<(), Box<dyn std::error::Error + 'static>> {
+    let project = download_json_for_project(&name, &version)?;
+    let mut my_project = handle_project_download(&project, pub_date);
+    handle_vcs(&mut my_project);
+    save_my_project_to_file(&my_project).unwrap_or_else(|e| {
+        error!("Error saving myproject JSON to file: {}", e);
+    });
+    Ok(())
+}
+
 fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
     info!("Handle project download: {}", project.info.name);
 
