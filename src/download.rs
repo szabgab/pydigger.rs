@@ -82,10 +82,6 @@ pub struct CollectStats {
     elapsed_time: i64,
 }
 
-pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error> {
-    serde_json::from_str(json_str)
-}
-
 /// Downloads the JSON metadata for a PyPI project given its name and version
 pub fn download_json_for_project(
     name: &str,
@@ -279,10 +275,9 @@ pub fn handle_project(
     version: String,
     pub_date: DateTime<Utc>,
 ) -> Result<(), Box<dyn std::error::Error + 'static>> {
-    let json = download_json_for_project(&name, &version)?;
-    let project = parse_pypi_json(&json)?;
+    let project_json_from_pypi = download_json_for_project(&name, &version)?;
 
-    let mut my_project = analyze_project_json_from_pypi(&project, pub_date);
+    let mut my_project = analyze_project_json_from_pypi(&project_json_from_pypi, pub_date);
     handle_vcs(&mut my_project);
     save_my_project_to_file(&my_project).unwrap_or_else(|e| {
         error!("Error saving myproject JSON to file: {}", e);
@@ -290,7 +285,11 @@ pub fn handle_project(
     Ok(())
 }
 
-fn analyze_project_json_from_pypi(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
+fn analyze_project_json_from_pypi(
+    project_json_from_pypi: &str,
+    pub_date: DateTime<Utc>,
+) -> MyProject {
+    let project = serde_json::from_str::<PyPiProject>(&project_json_from_pypi).unwrap();
     info!("Handle project download: {}", project.info.name);
 
     let mut project_urls = ProjectUrls {
