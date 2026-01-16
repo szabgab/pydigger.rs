@@ -91,7 +91,11 @@ pub fn download_json_for_project(
     name: &str,
     version: &str,
 ) -> Result<PyPiProject, Box<dyn std::error::Error>> {
-    let url = format!("https://pypi.org/pypi/{}/{}/json", name, version);
+    let url = if version.is_empty() {
+        format!("https://pypi.org/pypi/{}/json", name)
+    } else {
+        format!("https://pypi.org/pypi/{}/{}/json", name, version)
+    };
     let response = reqwest::blocking::get(&url)?;
     let json = response.text()?;
     let project = parse_pypi_json(&json)?;
@@ -271,7 +275,11 @@ fn process_item(item: &rss::Item) -> Result<Status, Box<dyn std::error::Error>> 
     Ok(Status::Success)
 }
 
-fn handle_project(name: String, version: String, pub_date: DateTime<Utc>) -> Result<(), Box<dyn std::error::Error + 'static>> {
+pub fn handle_project(
+    name: String,
+    version: String,
+    pub_date: DateTime<Utc>,
+) -> Result<(), Box<dyn std::error::Error + 'static>> {
     let project = download_json_for_project(&name, &version)?;
     let mut my_project = handle_project_download(&project, pub_date);
     handle_vcs(&mut my_project);

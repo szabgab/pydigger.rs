@@ -1,6 +1,7 @@
 mod download;
 mod report;
 
+use chrono::{DateTime, Utc};
 use clap::Parser;
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
@@ -16,6 +17,10 @@ pub struct Args {
     /// Limit the number of projets to download (used mostly during development)
     #[arg(long)]
     pub limit: Option<usize>,
+
+    /// Name of the project to download (used mostly during development)
+    #[arg(long)]
+    pub project: Option<String>,
 
     /// Generate a report from existing project files
     #[arg(long)]
@@ -43,6 +48,12 @@ fn main() {
         download::save_download_stats(cs).unwrap_or_else(|e| {
             error!("Error saving download stats: {}", e);
         });
+    }
+    if args.project.is_some() {
+        let name = args.project.as_ref().unwrap().clone();
+        let version = String::new();
+        let pub_date: DateTime<Utc> = Utc::now();
+        download::handle_project(name, version, pub_date).unwrap();
     }
 
     if args.report {
