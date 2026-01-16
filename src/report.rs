@@ -92,11 +92,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                 match Repository::from_url(&url) {
                     Ok(repo) => {
                         if repo.is_github() {
-                            *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
-                            vr.github_count += 1;
-                            if vr.github_projects.len() < PAGE_SIZE {
-                                vr.github_projects.push(project.smaller());
-                            }
+                            report_github(&mut vr, project);
                             report_github_action(&mut vr, project);
                             report_dependabot(&mut vr, project);
                         } else if repo.is_gitlab() {
@@ -142,6 +138,14 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         }
     }
     vr
+}
+
+fn report_github(vr: &mut VCSReport, project: &MyProject) {
+    *vr.hosts.entry(String::from("github")).or_insert(0) += 1;
+    vr.github_count += 1;
+    if vr.github_projects.len() < PAGE_SIZE {
+        vr.github_projects.push(project.smaller());
+    }
 }
 
 fn report_dependabot(vr: &mut VCSReport, project: &MyProject) {
