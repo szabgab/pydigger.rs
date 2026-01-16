@@ -282,7 +282,7 @@ pub fn handle_project(
     let json = download_json_for_project(&name, &version)?;
     let project = parse_pypi_json(&json)?;
 
-    let mut my_project = handle_project_download(&project, pub_date);
+    let mut my_project = analyze_project_json_from_pypi(&project, pub_date);
     handle_vcs(&mut my_project);
     save_my_project_to_file(&my_project).unwrap_or_else(|e| {
         error!("Error saving myproject JSON to file: {}", e);
@@ -290,7 +290,7 @@ pub fn handle_project(
     Ok(())
 }
 
-fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
+fn analyze_project_json_from_pypi(project: &PyPiProject, pub_date: DateTime<Utc>) -> MyProject {
     info!("Handle project download: {}", project.info.name);
 
     let mut project_urls = ProjectUrls {
