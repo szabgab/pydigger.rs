@@ -479,6 +479,38 @@ mod tests {
     }
 
     #[test]
+    fn test_analyze_project_json_from_pypi_with_flask() {
+        let json_content = fs::read_to_string("examples/flask-3.1.2.json")
+            .expect("Failed to read examples/flask-3.1.2.json");
+
+        let pub_date = Utc::now();
+        let my_project = analyze_project_json_from_pypi(&json_content, pub_date);
+
+        assert_eq!(my_project.name, "Flask");
+        assert_eq!(my_project.version, "3.1.2");
+        assert_eq!(my_project.pub_date, pub_date);
+        assert_eq!(my_project.license, None);
+        assert_eq!(
+            my_project.license_expression,
+            Some(String::from("BSD-3-Clause"))
+        );
+        assert_eq!(
+            my_project.summary,
+            Some(String::from(
+                "A simple framework for building complex web applications."
+            ))
+        );
+        assert_eq!(
+            my_project.project_urls,
+            Some(ProjectUrls {
+                homepage: None,
+                repository: None,
+                github: None
+            })
+        );
+    }
+
+    #[test]
     fn test_extract_name_version() {
         assert_eq!(
             extract_name_version("https://pypi.org/project/numpy/1.23.0/"),
