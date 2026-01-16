@@ -511,6 +511,35 @@ mod tests {
     }
 
     #[test]
+    fn test_analyze_project_json_from_pypi_with_jinja() {
+        let json_content = fs::read_to_string("examples/jinja-1.2.json")
+            .expect("Failed to read examples/jinja-1.2.json");
+
+        let pub_date = Utc::now();
+        let my_project = analyze_project_json_from_pypi(&json_content, pub_date);
+
+        assert_eq!(my_project.name, "Jinja");
+        assert_eq!(my_project.version, "1.2");
+        assert_eq!(my_project.pub_date, pub_date);
+        assert_eq!(my_project.license, Some(String::from("BSD")));
+        assert_eq!(my_project.license_expression, None);
+        assert_eq!(
+            my_project.summary,
+            Some(String::from(
+                "A small but fast and easy to use stand-alone template engine written in pure python."
+            ))
+        );
+        assert_eq!(
+            my_project.project_urls,
+            Some(ProjectUrls {
+                homepage: Some(String::from("http://jinja.pocoo.org/")),
+                repository: None,
+                github: None
+            })
+        );
+    }
+
+    #[test]
     fn test_extract_name_version() {
         assert_eq!(
             extract_name_version("https://pypi.org/project/numpy/1.23.0/"),
