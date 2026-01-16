@@ -98,19 +98,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                                 vr.github_projects.push(project.smaller());
                             }
                             report_github_action(&mut vr, project);
-                            if let Some(has_dependabot) = project.has_dependabot {
-                                if has_dependabot {
-                                    vr.has_dependabot_count += 1;
-                                    if vr.has_dependabot.len() < PAGE_SIZE {
-                                        vr.has_dependabot.push(project.smaller());
-                                    }
-                                } else {
-                                    vr.no_dependabot_count += 1;
-                                    if vr.no_dependabot.len() < PAGE_SIZE {
-                                        vr.no_dependabot.push(project.smaller());
-                                    }
-                                }
-                            }
+                            report_dependabot(&mut vr, project);
                         } else if repo.is_gitlab() {
                             *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
                             vr.gitlab_count += 1;
@@ -154,6 +142,22 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         }
     }
     vr
+}
+
+fn report_dependabot(vr: &mut VCSReport, project: &MyProject) {
+    if let Some(has_dependabot) = project.has_dependabot {
+        if has_dependabot {
+            vr.has_dependabot_count += 1;
+            if vr.has_dependabot.len() < PAGE_SIZE {
+                vr.has_dependabot.push(project.smaller());
+            }
+        } else {
+            vr.no_dependabot_count += 1;
+            if vr.no_dependabot.len() < PAGE_SIZE {
+                vr.no_dependabot.push(project.smaller());
+            }
+        }
+    }
 }
 
 fn report_github_action(vr: &mut VCSReport, project: &MyProject) {
