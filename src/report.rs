@@ -96,11 +96,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             report_github_action(&mut vr, project);
                             report_dependabot(&mut vr, project);
                         } else if repo.is_gitlab() {
-                            *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
-                            vr.gitlab_count += 1;
-                            if vr.gitlab_projects.len() < PAGE_SIZE {
-                                vr.gitlab_projects.push(project.smaller());
-                            }
+                            report_gitlab(&mut vr, project);
                             if let Some(has_gitlab_pipeline) = project.has_gitlab_pipeline {
                                 if has_gitlab_pipeline {
                                     vr.has_gitlab_pipeline_count += 1;
@@ -138,6 +134,14 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         }
     }
     vr
+}
+
+fn report_gitlab(vr: &mut VCSReport, project: &MyProject) {
+    *vr.hosts.entry(String::from("gitlab")).or_insert(0) += 1;
+    vr.gitlab_count += 1;
+    if vr.gitlab_projects.len() < PAGE_SIZE {
+        vr.gitlab_projects.push(project.smaller());
+    }
 }
 
 fn report_github(vr: &mut VCSReport, project: &MyProject) {
