@@ -97,19 +97,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             report_dependabot(&mut vr, project);
                         } else if repo.is_gitlab() {
                             report_gitlab(&mut vr, project);
-                            if let Some(has_gitlab_pipeline) = project.has_gitlab_pipeline {
-                                if has_gitlab_pipeline {
-                                    vr.has_gitlab_pipeline_count += 1;
-                                    if vr.has_gitlab_pipeline.len() < PAGE_SIZE {
-                                        vr.has_gitlab_pipeline.push(project.smaller());
-                                    }
-                                } else {
-                                    vr.no_gitlab_pipeline_count += 1;
-                                    if vr.no_gitlab_pipeline.len() < PAGE_SIZE {
-                                        vr.no_gitlab_pipeline.push(project.smaller());
-                                    }
-                                }
-                            }
+                            report_gitlab_pipeline(&mut vr, project);
                         } else {
                             *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
                         }
@@ -134,6 +122,22 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         }
     }
     vr
+}
+
+fn report_gitlab_pipeline(vr: &mut VCSReport, project: &MyProject) {
+    if let Some(has_gitlab_pipeline) = project.has_gitlab_pipeline {
+        if has_gitlab_pipeline {
+            vr.has_gitlab_pipeline_count += 1;
+            if vr.has_gitlab_pipeline.len() < PAGE_SIZE {
+                vr.has_gitlab_pipeline.push(project.smaller());
+            }
+        } else {
+            vr.no_gitlab_pipeline_count += 1;
+            if vr.no_gitlab_pipeline.len() < PAGE_SIZE {
+                vr.no_gitlab_pipeline.push(project.smaller());
+            }
+        }
+    }
 }
 
 fn report_gitlab(vr: &mut VCSReport, project: &MyProject) {
