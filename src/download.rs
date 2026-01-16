@@ -90,7 +90,7 @@ pub fn parse_pypi_json(json_str: &str) -> Result<PyPiProject, serde_json::Error>
 pub fn download_json_for_project(
     name: &str,
     version: &str,
-) -> Result<PyPiProject, Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let url = if version.is_empty() {
         format!("https://pypi.org/pypi/{}/json", name)
     } else {
@@ -98,8 +98,7 @@ pub fn download_json_for_project(
     };
     let response = reqwest::blocking::get(&url)?;
     let json = response.text()?;
-    let project = parse_pypi_json(&json)?;
-    Ok(project)
+    Ok(json)
 }
 
 /// Extracts (name, version) from PyPI project links of the format https://pypi.org/project/NAME/VERSION/
@@ -280,7 +279,9 @@ pub fn handle_project(
     version: String,
     pub_date: DateTime<Utc>,
 ) -> Result<(), Box<dyn std::error::Error + 'static>> {
-    let project = download_json_for_project(&name, &version)?;
+    let json = download_json_for_project(&name, &version)?;
+    let project = parse_pypi_json(&json)?;
+
     let mut my_project = handle_project_download(&project, pub_date);
     handle_vcs(&mut my_project);
     save_my_project_to_file(&my_project).unwrap_or_else(|e| {
