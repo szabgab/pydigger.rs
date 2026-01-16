@@ -23,7 +23,6 @@ pub struct PyPiProject {
 #[derive(Debug, Deserialize)]
 pub struct Info {
     pub author: Option<String>,
-    pub author_email: Option<String>,
     #[allow(dead_code)]
     pub bugtrack_url: Option<String>,
     #[allow(dead_code)]
@@ -41,7 +40,6 @@ pub struct Info {
     pub license: Option<String>,
     pub license_expression: Option<String>,
     pub maintainer: Option<String>,
-    pub maintainer_email: Option<String>,
     pub name: String,
     #[allow(dead_code)]
     pub package_url: Option<String>,
@@ -320,9 +318,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> My
         pub_date,
         home_page: project.info.home_page.clone(),
         maintainer: project.info.maintainer.clone(),
-        maintainer_email: project.info.maintainer_email.clone(),
         author: project.info.author.clone(),
-        author_email: project.info.author_email.clone(),
         project_urls: Some(project_urls),
         has_github_actions: None,
         has_gitlab_pipeline: None,

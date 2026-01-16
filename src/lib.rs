@@ -21,9 +21,7 @@ pub struct MyProject {
     pub license_expression: Option<String>,
     pub home_page: Option<String>,
     pub maintainer: Option<String>,
-    pub maintainer_email: Option<String>,
     pub author: Option<String>,
-    pub author_email: Option<String>,
 
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
