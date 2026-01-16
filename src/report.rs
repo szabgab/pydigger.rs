@@ -97,19 +97,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                             if vr.github_projects.len() < PAGE_SIZE {
                                 vr.github_projects.push(project.smaller());
                             }
-                            if let Some(has_github_actions) = project.has_github_actions {
-                                if has_github_actions {
-                                    vr.has_github_actions_count += 1;
-                                    if vr.has_github_actions.len() < PAGE_SIZE {
-                                        vr.has_github_actions.push(project.smaller());
-                                    }
-                                } else {
-                                    vr.no_github_actions_count += 1;
-                                    if vr.no_github_actions.len() < PAGE_SIZE {
-                                        vr.no_github_actions.push(project.smaller());
-                                    }
-                                }
-                            }
+                            report_github_action(&mut vr, project);
                             if let Some(has_dependabot) = project.has_dependabot {
                                 if has_dependabot {
                                     vr.has_dependabot_count += 1;
@@ -166,6 +154,22 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         }
     }
     vr
+}
+
+fn report_github_action(vr: &mut VCSReport, project: &MyProject) {
+    if let Some(has_github_actions) = project.has_github_actions {
+        if has_github_actions {
+            vr.has_github_actions_count += 1;
+            if vr.has_github_actions.len() < PAGE_SIZE {
+                vr.has_github_actions.push(project.smaller());
+            }
+        } else {
+            vr.no_github_actions_count += 1;
+            if vr.no_github_actions.len() < PAGE_SIZE {
+                vr.no_github_actions.push(project.smaller());
+            }
+        }
+    }
 }
 
 fn create_license_report(projects: &[MyProject]) -> LicenseReport {
