@@ -61,6 +61,10 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         no_github_actions: vec![],
         has_github_actions_count: 0,
         has_github_actions: vec![],
+        no_dependabot_count: 0,
+        no_dependabot: vec![],
+        has_dependabot_count: 0,
+        has_dependabot: vec![],
         has_gitlab_pipeline_count: 0,
         has_gitlab_pipeline: vec![],
         no_gitlab_pipeline_count: 0,
@@ -103,6 +107,19 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                                     vr.no_github_actions_count += 1;
                                     if vr.no_github_actions.len() < PAGE_SIZE {
                                         vr.no_github_actions.push(project.smaller());
+                                    }
+                                }
+                            }
+                            if let Some(has_dependabot) = project.has_dependabot {
+                                if has_dependabot {
+                                    vr.has_dependabot_count += 1;
+                                    if vr.has_dependabot.len() < PAGE_SIZE {
+                                        vr.has_dependabot.push(project.smaller());
+                                    }
+                                } else {
+                                    vr.no_dependabot_count += 1;
+                                    if vr.no_dependabot.len() < PAGE_SIZE {
+                                        vr.no_dependabot.push(project.smaller());
                                     }
                                 }
                             }

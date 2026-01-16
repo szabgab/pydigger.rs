@@ -326,6 +326,7 @@ fn handle_project_download(project: &PyPiProject, pub_date: DateTime<Utc>) -> My
         project_urls: Some(project_urls),
         has_github_actions: None,
         has_gitlab_pipeline: None,
+        has_dependabot: None,
     };
 
     debug!("Project Name: {}", project.info.name);
@@ -375,6 +376,7 @@ fn handle_vcs(project: &mut MyProject) {
             if repo.is_github() {
                 info!("Project {} uses GitHub.", project.name);
                 project.has_github_actions = Some(false);
+                project.has_dependabot = Some(false);
                 if repo.check_url() {
                     info!(
                         "Verified GitHub repository URL for project {}: {}",
@@ -390,6 +392,10 @@ fn handle_vcs(project: &mut MyProject) {
                             "Project {} does not have GitHub Actions configured.",
                             project.name
                         );
+                    }
+                    if repo.has_dependabot(root) {
+                        info!("Project {} has Dependabot configured.", project.name);
+                        project.has_dependabot = Some(true);
                     }
                 } else {
                     error!(
