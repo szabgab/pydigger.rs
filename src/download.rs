@@ -462,8 +462,20 @@ mod tests {
         assert_eq!(my_project.name, "pixelcore");
         assert_eq!(my_project.version, "0.0.5");
         assert_eq!(my_project.pub_date, pub_date);
-        assert!(my_project.summary.is_some());
-        assert!(my_project.project_urls.is_some());
+        assert_eq!(my_project.license, None);
+        assert_eq!(my_project.license_expression, Some("MIT".to_string()));
+        assert_eq!(
+            my_project.summary,
+            Some("Core image and video processing primitives".to_string())
+        );
+        assert_eq!(
+            my_project.project_urls,
+            Some(ProjectUrls {
+                homepage: Some(String::from("https://github.com/cruvdev/pixelcore")),
+                repository: Some(String::from("https://github.com/cruvdev/pixelcore")),
+                github: None
+            })
+        );
     }
 
     #[test]
