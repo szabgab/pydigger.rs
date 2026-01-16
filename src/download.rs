@@ -446,3 +446,47 @@ fn handle_vcs(project: &mut MyProject) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_analyze_project_json_from_pypi_with_pixelcore() {
+        let json_content = fs::read_to_string("examples/pixelcore-0.0.5.json")
+            .expect("Failed to read examples/pixelcore-0.0.5.json");
+
+        let pub_date = Utc::now();
+        let my_project = analyze_project_json_from_pypi(&json_content, pub_date);
+
+        assert_eq!(my_project.name, "pixelcore");
+        assert_eq!(my_project.version, "0.0.5");
+        assert_eq!(my_project.pub_date, pub_date);
+        assert!(my_project.summary.is_some());
+        assert!(my_project.project_urls.is_some());
+    }
+
+    #[test]
+    fn test_extract_name_version() {
+        assert_eq!(
+            extract_name_version("https://pypi.org/project/numpy/1.23.0/"),
+            Some(("numpy".to_string(), "1.23.0".to_string()))
+        );
+
+        assert_eq!(
+            extract_name_version("https://pypi.org/project/requests/2.28.1"),
+            Some(("requests".to_string(), "2.28.1".to_string()))
+        );
+
+        assert_eq!(extract_name_version("https://example.com/project/"), None);
+    }
+
+    #[test]
+    fn test_get_pypi_project_path() {
+        let path = get_pypi_project_path("numpy");
+        assert!(path.contains("/nu"));
+
+        let path_short = get_pypi_project_path("ab");
+        assert!(!path_short.contains("/ab/"));
+    }
+}
