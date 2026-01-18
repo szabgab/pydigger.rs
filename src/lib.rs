@@ -22,6 +22,8 @@ pub struct MyProject {
     pub home_page: Option<String>,
     pub maintainer: Option<String>,
     pub author: Option<String>,
+    pub repository: Option<String>,
+    pub repository_source: Option<String>,
 
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
@@ -95,17 +97,46 @@ impl MyProject {
         }
     }
 
-    pub fn get_repository_url(&self) -> Option<String> {
+    pub fn set_repository_url(&mut self) {
         // TODO: Where does the project store the VCS URL?
         // There can be several names in project_urls and some use the home_page field for that.
         // We should report if the porject uses the "old way" or if it uses multiple ways.
         // For now let's check several
+
+        // TODO
+        // Report if we found a repository URL in more than one place
+        // Especially if they differ
         match &self.project_urls {
-            Some(urls) => urls
-                .repository
-                .clone()
-                .or_else(|| urls.github.clone().or_else(|| urls.homepage.clone())),
-            None => self.home_page.clone(),
-        }
+            Some(urls) => {
+                match &urls.repository {
+                    Some(repo) => {
+                        self.repository = Some(repo.clone());
+                        self.repository_source = Some(String::from("project_urls.repository"));
+                        return;
+                    }
+                    None => {}
+                }
+                match &urls.github {
+                    Some(repo) => {
+                        self.repository = Some(repo.clone());
+                        self.repository_source = Some(String::from("project_urls.github"));
+                        return;
+                    }
+                    None => {}
+                }
+                match &urls.homepage {
+                    Some(repo) => {
+                        self.repository = Some(repo.clone());
+                        self.repository_source = Some(String::from("project_urls.homepage"));
+                        return;
+                    }
+                    None => {}
+                }
+            }
+            None => {
+                self.repository = self.home_page.clone();
+                self.repository_source = Some(String::from("home_page"));
+            }
+        };
     }
 }

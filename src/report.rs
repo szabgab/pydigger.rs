@@ -74,7 +74,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
     for project in projects.iter() {
         info!("Processing project {} for VCS report", project.name);
 
-        let url = project.get_repository_url();
+        let url = project.repository.clone();
         if url.is_none() {
             vr.no_vcs_count += 1;
             if vr.no_vcs.len() < PAGE_SIZE {

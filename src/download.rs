@@ -331,12 +331,14 @@ fn analyze_project_json_from_pypi(
         None => {}
     }
 
-    let my_project = MyProject {
+    let mut my_project = MyProject {
         name: project.info.name.clone(),
         version: project.info.version.clone(),
         summary: project.info.summary.clone(),
         license: project.info.license.clone(),
         license_expression: project.info.license_expression.clone(),
+        repository: project_urls.repository.clone(),
+        repository_source: None,
         pub_date,
         home_page: project.info.home_page.clone(),
         maintainer: project.info.maintainer.clone(),
@@ -346,7 +348,7 @@ fn analyze_project_json_from_pypi(
         has_gitlab_pipeline: None,
         has_dependabot: None,
     };
-
+    my_project.set_repository_url();
     debug!("Project Name: {}", project.info.name);
     debug!("Version: {}", project.info.version);
     if let Some(author) = &project.info.author {
@@ -385,10 +387,10 @@ pub fn get_rss() -> Result<String, Box<dyn std::error::Error>> {
 fn handle_vcs(project: &mut MyProject) {
     let temp_folder = tempfile::tempdir().unwrap();
 
-    if project.get_repository_url().is_none() {
+    if project.repository.is_none() {
         return;
     }
-    let repo_url = project.get_repository_url().unwrap();
+    let repo_url = project.repository.clone().unwrap();
     match Repository::from_url(&repo_url) {
         Ok(repo) => {
             if repo.is_github() {
