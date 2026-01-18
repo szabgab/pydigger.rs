@@ -11,65 +11,7 @@ use tracing::{debug, error, info};
 
 use chrono::serde::ts_seconds;
 
-#[derive(Debug, Deserialize)]
-pub struct PyPiProject {
-    pub info: Info,
-    #[allow(dead_code)]
-    pub urls: Option<Vec<UrlInfo>>, // If present in other samples
-    #[allow(dead_code)]
-    pub releases: Option<serde_json::Value>, // For flexibility
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Info {
-    pub author: Option<String>,
-    #[allow(dead_code)]
-    pub bugtrack_url: Option<String>,
-    #[allow(dead_code)]
-    pub classifiers: Vec<String>,
-    #[allow(dead_code)]
-    pub description: String,
-    #[allow(dead_code)]
-    pub description_content_type: Option<String>,
-    #[allow(dead_code)]
-    pub docs_url: Option<String>,
-    pub download_url: Option<String>,
-    pub home_page: Option<String>,
-    #[allow(dead_code)]
-    pub keywords: Option<String>,
-    pub license: Option<String>,
-    pub license_expression: Option<String>,
-    pub maintainer: Option<String>,
-    pub name: String,
-    #[allow(dead_code)]
-    pub package_url: Option<String>,
-    #[allow(dead_code)]
-    pub platform: Option<String>,
-    #[allow(dead_code)]
-    pub project_url: Option<String>,
-    pub project_urls: Option<serde_json::Map<String, serde_json::Value>>,
-    #[allow(dead_code)]
-    pub release_url: Option<String>,
-    pub requires_dist: Option<Vec<String>>,
-    #[allow(dead_code)]
-    pub requires_python: Option<String>,
-    pub summary: Option<String>,
-    pub version: String,
-    #[allow(dead_code)]
-    pub yanked: Option<bool>,
-    #[allow(dead_code)]
-    pub yanked_reason: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct UrlInfo {
-    #[allow(dead_code)]
-    pub url: String,
-    #[allow(dead_code)]
-    pub packagetype: Option<String>,
-    #[allow(dead_code)]
-    pub filename: Option<String>,
-}
+use pydigger::PyPiProject;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CollectStats {
