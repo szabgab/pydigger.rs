@@ -53,7 +53,10 @@ fn main() {
         let name = args.project.as_ref().unwrap().clone();
         let version = String::new();
         let pub_date: DateTime<Utc> = Utc::now();
-        download::handle_project(name, version, pub_date).unwrap();
+        match download::handle_project(name, version, pub_date) {
+            Ok(()) => info!("Project processed successfully!"),
+            Err(e) => error!("Error processing project: {}", e),
+        }
     }
 
     if args.report {

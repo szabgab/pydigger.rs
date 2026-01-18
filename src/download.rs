@@ -93,8 +93,17 @@ pub fn download_json_for_project(
         format!("https://pypi.org/pypi/{}/{}/json", name, version)
     };
     let response = reqwest::blocking::get(&url)?;
-    let json = response.text()?;
-    Ok(json)
+    if response.status().is_success() {
+        let json = response.text()?;
+        return Ok(json);
+    } else {
+        Err(format!(
+            "Failed to download JSON for project {} version {}: HTTP {}",
+            name,
+            version,
+            response.status()
+        ))?
+    }
 }
 
 /// Extracts (name, version) from PyPI project links of the format https://pypi.org/project/NAME/VERSION/
