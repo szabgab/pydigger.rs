@@ -86,6 +86,7 @@ pub struct Report {
     pub projects: Vec<MyFilteredProject>,
     pub license: LicenseReport,
     pub vcs: VCSReport,
+    pub project_urls_count: HashMap<String, u32>,
 }
 
 impl MyProject {

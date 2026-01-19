@@ -25,6 +25,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     let pages_size = total_projects.min(PAGE_SIZE);
     let lr = create_license_report(&all_projects);
     let vcs = create_vcs_report(&all_projects);
+    let project_urls_count = create_urls_report(&all_projects);
 
     // Create the report
     let report = Report {
@@ -36,6 +37,7 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
             .collect(),
         license: lr,
         vcs,
+        project_urls_count: project_urls_count,
     };
     let report_json = serde_json::to_string_pretty(&report)?;
 
@@ -49,6 +51,18 @@ pub fn generate_report() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn create_urls_report(projects: &[MyProject]) -> HashMap<String, u32> {
+    let mut field_counts: HashMap<String, u32> = HashMap::new();
+
+    for project in projects.iter() {
+        for (key, _value) in project.project_urls.iter() {
+            let entry = field_counts.entry(key.clone()).or_insert(0);
+            *entry += 1;
+        }
+    }
+
+    field_counts
+}
 fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
     let mut vr = VCSReport {
         hosts: HashMap::new(),
