@@ -1,17 +1,18 @@
-use crate::{Args, report};
+use std::collections::HashMap;
+use std::fs;
+
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
-use git_digger::Repository;
-use pydigger::MyProject;
 use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs;
 use tracing::{debug, error, info};
 
-use chrono::serde::ts_seconds;
+use git_digger::Repository;
 
+use crate::{Args, report};
+use pydigger::MyProject;
 use pydigger::PyPiProject;
 
 #[derive(Debug, Deserialize, Serialize)]

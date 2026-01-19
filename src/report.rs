@@ -1,9 +1,12 @@
-use git_digger::Repository;
-use pydigger::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
 use tracing::{error, info};
+
+use git_digger::Repository;
+
+use pydigger::{LicenseReport, MyProject, PAGE_SIZE, Report, VCSReport};
 
 pub fn get_pypi_path() -> String {
     String::from("data/pypi")

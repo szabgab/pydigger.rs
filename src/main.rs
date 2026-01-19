@@ -1,10 +1,10 @@
-mod download;
-mod report;
-
 use chrono::{DateTime, Utc};
 use clap::Parser;
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
+
+mod download;
+mod report;
 
 /// Command line arguments
 #[derive(Parser, Debug)]
