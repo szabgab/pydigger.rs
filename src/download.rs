@@ -1,11 +1,12 @@
 use crate::{Args, report};
 use chrono::{DateTime, Utc};
 use git_digger::Repository;
-use pydigger::{MyProject, ProjectUrls};
+use pydigger::MyProject;
 use regex::Regex;
 use reqwest::blocking::get;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use tracing::{debug, error, info};
 
@@ -243,35 +244,18 @@ fn analyze_project_json_from_pypi(
     let project = serde_json::from_str::<PyPiProject>(&project_json_from_pypi).unwrap();
     info!("Handle project download: {}", project.info.name);
 
-    let mut project_urls = ProjectUrls {
-        homepage: None,
-        repository: None,
-        github: None,
-    };
     // TODO: collect the various project URLs so we can learn what names do people use
     // I've seen:
     // Homepage, Issues, Repository, Source, Documentation, Github, API Documentation
     // TODO: What are the rules?
-    match &project.info.project_urls {
-        Some(urls) => {
-            for (key, value) in urls {
-                info!("Project URL - {}: {}", key, value);
-                if key == "Homepage" {
-                    let value = value.as_str().unwrap_or("").to_string();
-                    project_urls.homepage = Some(value);
-                }
-                if key == "Repository" {
-                    let value = value.as_str().unwrap_or("").to_string();
-                    project_urls.repository = Some(value);
-                }
-                if key == "Github" {
-                    let value = value.as_str().unwrap_or("").to_string();
-                    project_urls.github = Some(value);
-                }
-            }
-        }
-        None => {}
-    }
+    let project_urls: HashMap<String, String> = project
+        .info
+        .project_urls
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(k, v)| (k, v.as_str().unwrap_or("").to_string()))
+        .collect();
 
     let mut my_project = MyProject {
         name: project.info.name.clone(),
@@ -279,13 +263,13 @@ fn analyze_project_json_from_pypi(
         summary: project.info.summary.clone(),
         license: project.info.license.clone(),
         license_expression: project.info.license_expression.clone(),
-        repository: project_urls.repository.clone(),
+        repository: None,
         repository_source: None,
         pub_date,
         home_page: None,
         maintainer: project.info.maintainer.clone(),
         author: project.info.author.clone(),
-        project_urls: Some(project_urls),
+        project_urls: project_urls,
         has_github_actions: None,
         has_gitlab_pipeline: None,
         has_dependabot: None,
@@ -424,11 +408,16 @@ mod tests {
         );
         assert_eq!(
             my_project.project_urls,
-            Some(ProjectUrls {
-                homepage: Some(String::from("https://github.com/cruvdev/pixelcore")),
-                repository: Some(String::from("https://github.com/cruvdev/pixelcore")),
-                github: None
-            })
+            HashMap::from([
+                (
+                    String::from("Repository"),
+                    String::from("https://github.com/cruvdev/pixelcore")
+                ),
+                (
+                    String::from("Homepage"),
+                    String::from("https://github.com/cruvdev/pixelcore")
+                )
+            ])
         );
     }
 
@@ -456,11 +445,28 @@ mod tests {
         );
         assert_eq!(
             my_project.project_urls,
-            Some(ProjectUrls {
-                homepage: None,
-                repository: None,
-                github: None
-            })
+            HashMap::from([
+                (
+                    String::from("Source"),
+                    String::from("https://github.com/pallets/flask/")
+                ),
+                (
+                    String::from("Donate"),
+                    String::from("https://palletsprojects.com/donate")
+                ),
+                (
+                    String::from("Changes"),
+                    String::from("https://flask.palletsprojects.com/page/changes/")
+                ),
+                (
+                    String::from("Chat"),
+                    String::from("https://discord.gg/pallets")
+                ),
+                (
+                    String::from("Documentation"),
+                    String::from("https://flask.palletsprojects.com/")
+                ),
+            ])
         );
     }
 
@@ -485,11 +491,13 @@ mod tests {
         );
         assert_eq!(
             my_project.project_urls,
-            Some(ProjectUrls {
-                homepage: Some(String::from("http://jinja.pocoo.org/")),
-                repository: None,
-                github: None
-            })
+            HashMap::from([
+                (
+                    String::from("Homepage"),
+                    String::from("http://jinja.pocoo.org/")
+                ),
+                (String::from("Download"), String::from("UNKNOWN")),
+            ])
         );
     }
 

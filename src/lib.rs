@@ -1,18 +1,12 @@
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 pub const PAGE_SIZE: usize = 50;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct ProjectUrls {
-    pub homepage: Option<String>,
-    pub repository: Option<String>,
-    pub github: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct MyProject {
     pub name: String,
     pub version: String,
@@ -27,10 +21,16 @@ pub struct MyProject {
 
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
-    pub project_urls: Option<ProjectUrls>,
+    pub project_urls: HashMap<String, String>,
     pub has_github_actions: Option<bool>,
     pub has_gitlab_pipeline: Option<bool>,
     pub has_dependabot: Option<bool>,
+}
+
+impl PartialOrd for MyProject {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.name.cmp(&other.name))
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
