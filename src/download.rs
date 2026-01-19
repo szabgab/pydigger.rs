@@ -282,7 +282,7 @@ fn analyze_project_json_from_pypi(
         repository: project_urls.repository.clone(),
         repository_source: None,
         pub_date,
-        home_page: project.info.home_page.clone(),
+        home_page: None,
         maintainer: project.info.maintainer.clone(),
         author: project.info.author.clone(),
         project_urls: Some(project_urls),
@@ -290,6 +290,7 @@ fn analyze_project_json_from_pypi(
         has_gitlab_pipeline: None,
         has_dependabot: None,
     };
+    my_project.set_homepage(&project);
     my_project.set_repository_url();
     debug!("Project Name: {}", project.info.name);
     debug!("Version: {}", project.info.version);

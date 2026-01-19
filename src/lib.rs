@@ -97,6 +97,32 @@ impl MyProject {
         }
     }
 
+    pub fn set_homepage(&mut self, project: &PyPiProject) {
+        match &project.info.project_urls {
+            Some(urls) => {
+                match urls.get("Homepage") {
+                    Some(home_page) => {
+                        if let Some(home_page_str) = home_page.as_str() {
+                            self.home_page = Some(home_page_str.to_string());
+                            //self.home_page_source = Some(String::from("project_urls.Homepage"));
+                            return;
+                        }
+                    }
+                    None => {}
+                }
+            }
+            None => {}
+        }
+
+        match &project.info.home_page {
+            Some(home_page) => {
+                self.home_page = Some(home_page.clone());
+                // self.home_page_source = Some(String::from("info.home_page"));
+            }
+            None => {}
+        }
+    }
+
     pub fn set_repository_url(&mut self) {
         // TODO: Where does the project store the VCS URL?
         // There can be several names in project_urls and some use the home_page field for that.
