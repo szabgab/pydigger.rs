@@ -123,7 +123,7 @@ impl MyProject {
         }
     }
 
-    pub fn set_repository_url(&mut self) {
+    pub fn set_repository_url(&mut self, project: &PyPiProject) {
         // TODO: Where does the project store the VCS URL?
         // There can be several names in project_urls and some use the home_page field for that.
         // We should report if the porject uses the "old way" or if it uses multiple ways.
@@ -132,29 +132,35 @@ impl MyProject {
         // TODO
         // Report if we found a repository URL in more than one place
         // Especially if they differ
-        match &self.project_urls {
+        match &project.info.project_urls {
             Some(urls) => {
-                match &urls.repository {
+                match urls.get("Repository") {
                     Some(repo) => {
-                        self.repository = Some(repo.clone());
-                        self.repository_source = Some(String::from("project_urls.repository"));
-                        return;
+                        if let Some(repo_str) = repo.as_str() {
+                            self.repository = Some(repo_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.repository"));
+                            return;
+                        }
                     }
                     None => {}
                 }
-                match &urls.github {
+                match urls.get("GitHub") {
                     Some(repo) => {
-                        self.repository = Some(repo.clone());
-                        self.repository_source = Some(String::from("project_urls.github"));
-                        return;
+                        if let Some(repo_str) = repo.as_str() {
+                            self.repository = Some(repo_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.github"));
+                            return;
+                        }
                     }
                     None => {}
                 }
-                match &urls.homepage {
+                match urls.get("Homepage") {
                     Some(repo) => {
-                        self.repository = Some(repo.clone());
-                        self.repository_source = Some(String::from("project_urls.homepage"));
-                        return;
+                        if let Some(repo_str) = repo.as_str() {
+                            self.repository = Some(repo_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.homepage"));
+                            return;
+                        }
                     }
                     None => {}
                 }

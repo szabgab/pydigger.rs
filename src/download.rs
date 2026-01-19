@@ -291,7 +291,7 @@ fn analyze_project_json_from_pypi(
         has_dependabot: None,
     };
     my_project.set_homepage(&project);
-    my_project.set_repository_url();
+    my_project.set_repository_url(&project);
     debug!("Project Name: {}", project.info.name);
     debug!("Version: {}", project.info.version);
     if let Some(author) = &project.info.author {
