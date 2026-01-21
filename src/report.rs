@@ -86,6 +86,10 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
         has_gitlab_pipeline: vec![],
         no_gitlab_pipeline_count: 0,
         no_gitlab_pipeline: vec![],
+        has_setup_cfg_count: 0,
+        has_setup_cfg: vec![],
+        no_pyproject_toml_count: 0,
+        no_pyproject_toml: vec![],
     };
 
     for project in projects.iter() {
@@ -118,6 +122,7 @@ fn create_vcs_report(projects: &[MyProject]) -> VCSReport {
                         } else {
                             *vr.hosts.entry(String::from("other")).or_insert(0) += 1;
                         }
+                        report_project_files(&mut vr, project);
                     }
                     Err(_) => {
                         info!("Unrecognized VCS '{}' in project {}", url, project.name);
@@ -184,6 +189,26 @@ fn report_dependabot(vr: &mut VCSReport, project: &MyProject) {
             vr.no_dependabot_count += 1;
             if vr.no_dependabot.len() < PAGE_SIZE {
                 vr.no_dependabot.push(project.smaller());
+            }
+        }
+    }
+}
+
+fn report_project_files(vr: &mut VCSReport, project: &MyProject) {
+    if let Some(has_setup_cfg) = project.has_setup_cfg {
+        if has_setup_cfg {
+            vr.has_setup_cfg_count += 1;
+            if vr.has_setup_cfg.len() < PAGE_SIZE {
+                vr.has_setup_cfg.push(project.smaller());
+            }
+        }
+    }
+
+    if let Some(has_pyproject_toml) = project.has_pyproject_toml {
+        if !has_pyproject_toml {
+            vr.no_pyproject_toml_count += 1;
+            if vr.no_pyproject_toml.len() < PAGE_SIZE {
+                vr.no_pyproject_toml.push(project.smaller());
             }
         }
     }
@@ -359,7 +384,7 @@ fn load_all_projects(pypi_dir: &Path) -> Result<Vec<MyProject>, Box<dyn std::err
                                     projects.push(project);
                                 }
                                 Err(e) => {
-                                    error!("Invalid JSON in file {:?}: {}", file_path, e);
+                                    panic!("Invalid JSON in file {:?}: {}", file_path, e);
                                 }
                             }
                         }

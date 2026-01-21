@@ -388,17 +388,11 @@ fn handle_vcs(project: &mut MyProject) {
             if cloned {
                 let path = repo.path(root);
                 let file = path.join("pyproject.toml");
-                if file.exists() {
-                    project.has_pyproject_toml = Some(file.exists());
-                }
+                project.has_pyproject_toml = Some(file.exists());
                 let file = path.join("setup.py");
-                if file.exists() {
-                    project.has_setup_py = Some(true);
-                }
+                project.has_setup_py = Some(file.exists());
                 let file = path.join("setup.cfg");
-                if file.exists() {
-                    project.has_setup_cfg = Some(true);
-                }
+                project.has_setup_cfg = Some(file.exists());
             }
         }
         Err(e) => {

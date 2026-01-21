@@ -74,6 +74,10 @@ pub struct VCSReport {
     pub has_gitlab_pipeline: Vec<MyFilteredProject>,
     pub no_gitlab_pipeline_count: u32,
     pub no_gitlab_pipeline: Vec<MyFilteredProject>,
+    pub has_setup_cfg_count: u32,
+    pub has_setup_cfg: Vec<MyFilteredProject>,
+    pub no_pyproject_toml_count: u32,
+    pub no_pyproject_toml: Vec<MyFilteredProject>,
 }
 
 #[derive(Debug, Serialize)]
