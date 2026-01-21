@@ -102,15 +102,14 @@ impl MyProject {
     pub fn set_homepage(&mut self, project: &PyPiProject) {
         match &project.info.project_urls {
             Some(urls) => {
-                match urls.get("Homepage") {
-                    Some(home_page) => {
-                        if let Some(home_page_str) = home_page.as_str() {
-                            self.home_page = Some(home_page_str.to_string());
-                            //self.home_page_source = Some(String::from("project_urls.Homepage"));
-                            return;
+                for (key, value) in urls.iter() {
+                    if let Some(value_str) = value.as_str() {
+                        if key == "Homepage" {
+                            self.home_page = Some(value_str.to_string());
+                            // self.home_page_source = Some(String::from("project_urls.Homepage"));
                         }
+                        self.project_urls.insert(key.clone(), value_str.to_string());
                     }
-                    None => {}
                 }
             }
             None => {}
