@@ -120,6 +120,7 @@ impl MyProject {
             Some(urls) => {
                 for (key, value) in urls.iter() {
                     if let Some(value_str) = value.as_str() {
+                        self.project_urls.insert(key.clone(), value_str.to_string());
                         let normalized_key = normalize_url(key);
 
                         if normalized_key == "source" {
