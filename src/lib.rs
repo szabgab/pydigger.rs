@@ -15,6 +15,7 @@ pub struct MyProject {
     pub license: Option<String>,
     pub license_expression: Option<String>,
     pub home_page: Option<String>,
+    pub home_page_source: Option<String>,
     pub maintainer: Option<String>,
     pub author: Option<String>,
     pub repository: Option<String>,
@@ -116,7 +117,8 @@ impl MyProject {
                         let normalized_key = normalize_url(key);
                         if normalized_key == "homepage" {
                             self.home_page = Some(value_str.to_string());
-                            // self.home_page_source = Some(String::from("project_urls.Homepage"));
+                            self.home_page_source = Some(String::from("project_urls.homepage"));
+
                             self.repository = Some(value_str.to_string());
                             self.repository_source = Some(String::from("project_urls.homepage"));
                         }

@@ -268,6 +268,7 @@ fn analyze_project_json_from_pypi(
         repository_source: None,
         pub_date,
         home_page: None,
+        home_page_source: None,
         maintainer: project.info.maintainer.clone(),
         author: project.info.author.clone(),
         project_urls: project_urls,
