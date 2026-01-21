@@ -115,12 +115,14 @@ impl MyProject {
                 for (key, value) in urls.iter() {
                     if let Some(value_str) = value.as_str() {
                         let normalized_key = normalize_url(key);
-                        if normalized_key == "homepage" {
-                            self.home_page = Some(value_str.to_string());
-                            self.home_page_source = Some(String::from("project_urls.homepage"));
 
+                        if normalized_key == "source" {
                             self.repository = Some(value_str.to_string());
-                            self.repository_source = Some(String::from("project_urls.homepage"));
+                            self.repository_source = Some(String::from("project_urls.source"));
+                        }
+                        if normalized_key == "sourcecode" {
+                            self.repository = Some(value_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.sourcecode"));
                         }
                         if normalized_key == "repository" {
                             self.repository = Some(value_str.to_string());
@@ -130,22 +132,37 @@ impl MyProject {
                             self.repository = Some(value_str.to_string());
                             self.repository_source = Some(String::from("project_urls.github"));
                         }
+
+                        if normalized_key == "homepage" {
+                            self.home_page = Some(value_str.to_string());
+                            self.home_page_source = Some(String::from("project_urls.homepage"));
+
+                            if self.repository.is_none() {
+                                self.repository = Some(value_str.to_string());
+                                self.repository_source =
+                                    Some(String::from("project_urls.homepage"));
+                            }
+                        }
                     }
                 }
             }
             None => {}
         }
 
-        match &project.info.home_page {
-            Some(home_page) => {
-                self.home_page = Some(home_page.clone());
-                // self.home_page_source = Some(String::from("info.home_page"));
+        if self.home_page.is_none() {
+            match &project.info.home_page {
+                Some(home_page) => {
+                    self.home_page = Some(home_page.clone());
+                    self.home_page_source = Some(String::from("info.home_page"));
+                }
+                None => {}
             }
-            None => {}
         }
         if self.repository.is_none() {
-            self.repository = self.home_page.clone();
-            self.repository_source = Some(String::from("home_page"));
+            if !self.home_page.is_none() {
+                self.repository = self.home_page.clone();
+                self.repository_source = Some(String::from("info.home_page"));
+            }
         };
     }
 }
