@@ -99,6 +99,7 @@ impl MyProject {
         }
     }
 
+    // See https://packaging.python.org/en/latest/specifications/well-known-project-urls/
     // TODO: Where does the project store the VCS URL?
     // There can be several names in project_urls and some use the home_page field for that.
     // We should report if the porject uses the "old way" or if it uses multiple ways.
@@ -112,17 +113,18 @@ impl MyProject {
             Some(urls) => {
                 for (key, value) in urls.iter() {
                     if let Some(value_str) = value.as_str() {
-                        if key == "Homepage" {
+                        let normalized_key = normalize_url(key);
+                        if normalized_key == "homepage" {
                             self.home_page = Some(value_str.to_string());
                             // self.home_page_source = Some(String::from("project_urls.Homepage"));
                             self.repository = Some(value_str.to_string());
                             self.repository_source = Some(String::from("project_urls.homepage"));
                         }
-                        if key == "Repository" {
+                        if normalized_key == "repository" {
                             self.repository = Some(value_str.to_string());
                             self.repository_source = Some(String::from("project_urls.repository"));
                         }
-                        if key == "GitHub" {
+                        if normalized_key == "github" {
                             self.repository = Some(value_str.to_string());
                             self.repository_source = Some(String::from("project_urls.github"));
                         }
