@@ -264,6 +264,8 @@ fn analyze_project_json_from_pypi(
         summary: project.info.summary.clone(),
         license: project.info.license.clone(),
         license_expression: project.info.license_expression.clone(),
+        download: None,
+        download_source: None,
         repository: None,
         repository_source: None,
         pub_date,

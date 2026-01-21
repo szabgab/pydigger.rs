@@ -20,6 +20,8 @@ pub struct MyProject {
     pub author: Option<String>,
     pub repository: Option<String>,
     pub repository_source: Option<String>,
+    pub download: Option<String>,
+    pub download_source: Option<String>,
 
     #[serde(with = "ts_seconds")]
     pub pub_date: DateTime<Utc>,
@@ -133,6 +135,11 @@ impl MyProject {
                             self.repository_source = Some(String::from("project_urls.github"));
                         }
 
+                        if normalized_key == "download" {
+                            self.download = Some(value_str.to_string());
+                            self.download_source = Some(String::from("project_urls.download"));
+                        }
+
                         if normalized_key == "homepage" {
                             self.home_page = Some(value_str.to_string());
                             self.home_page_source = Some(String::from("project_urls.homepage"));
@@ -158,6 +165,16 @@ impl MyProject {
                 None => {}
             }
         }
+        if self.download.is_none() {
+            match &project.info.download_url {
+                Some(download_url) => {
+                    self.download = Some(download_url.clone());
+                    self.download_source = Some(String::from("info.download_url"));
+                }
+                None => {}
+            }
+        }
+
         if self.repository.is_none() {
             if !self.home_page.is_none() {
                 self.repository = self.home_page.clone();
