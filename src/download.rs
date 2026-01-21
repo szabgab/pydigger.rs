@@ -277,6 +277,9 @@ fn analyze_project_json_from_pypi(
         has_github_actions: None,
         has_gitlab_pipeline: None,
         has_dependabot: None,
+        has_pyproject_toml: None,
+        has_setup_py: None,
+        has_setup_cfg: None,
     };
     my_project.process_urls(&project);
     debug!("Project Name: {}", project.info.name);
@@ -323,6 +326,8 @@ fn handle_vcs(project: &mut MyProject) {
     let repo_url = project.repository.clone().unwrap();
     match Repository::from_url(&repo_url) {
         Ok(repo) => {
+            let mut cloned = false;
+            let root = std::path::Path::new(temp_folder.path());
             if repo.is_github() {
                 info!("Project {} uses GitHub.", project.name);
                 project.has_github_actions = Some(false);
@@ -332,8 +337,7 @@ fn handle_vcs(project: &mut MyProject) {
                         "Verified GitHub repository URL for project {}: {}",
                         project.name, repo_url
                     );
-                    let root = std::path::Path::new(temp_folder.path());
-                    repo.update_repository(root, true, Some(1)).unwrap();
+                    cloned = repo.update_repository(root, true, Some(1)).is_ok();
                     if repo.has_github_actions(root) {
                         info!("Project {} has GitHub Actions configured.", project.name);
                         project.has_github_actions = Some(true);
@@ -361,8 +365,7 @@ fn handle_vcs(project: &mut MyProject) {
                         "Verified GitLab repository URL for project {}: {}",
                         project.name, repo_url
                     );
-                    let root = std::path::Path::new(temp_folder.path());
-                    repo.update_repository(root, true, Some(1)).unwrap();
+                    cloned = repo.update_repository(root, true, Some(1)).is_ok();
                     if repo.has_gitlab_pipeline(root) {
                         info!("Project {} has GitLab pipeline configured.", project.name);
                         project.has_gitlab_pipeline = Some(true);
@@ -380,6 +383,22 @@ fn handle_vcs(project: &mut MyProject) {
                 }
             } else {
                 debug!("Project {} uses other VCS host.", project.name);
+            }
+
+            if cloned {
+                let path = repo.path(root);
+                let file = path.join("pyproject.toml");
+                if file.exists() {
+                    project.has_pyproject_toml = Some(file.exists());
+                }
+                let file = path.join("setup.py");
+                if file.exists() {
+                    project.has_setup_py = Some(true);
+                }
+                let file = path.join("setup.cfg");
+                if file.exists() {
+                    project.has_setup_cfg = Some(true);
+                }
             }
         }
         Err(e) => {

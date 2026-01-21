@@ -29,6 +29,10 @@ pub struct MyProject {
     pub has_github_actions: Option<bool>,
     pub has_gitlab_pipeline: Option<bool>,
     pub has_dependabot: Option<bool>,
+
+    pub has_pyproject_toml: Option<bool>,
+    pub has_setup_py: Option<bool>,
+    pub has_setup_cfg: Option<bool>,
 }
 
 impl PartialOrd for MyProject {
