@@ -234,3 +234,70 @@ pub struct UrlInfo {
     #[allow(dead_code)]
     pub filename: Option<String>,
 }
+
+// As explained here: https://packaging.python.org/en/latest/specifications/well-known-project-urls/#label-normalization
+// >>> string.punctuation
+// '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
+// >>> string.whitespace
+// ' \t\n\r\x0b\x0c'
+const PUNCTUATION_CHARS: &str = r#"!"$#%&'()*+,-./:;<=>?@[\]^_`{|}~"#;
+const WHITESPACE_CHARS: &str = " \t\n\r\x0b\x0c";
+
+fn normalize_url(url: &str) -> String {
+    let result: String = url
+        .chars()
+        .filter(|c| !PUNCTUATION_CHARS.contains(*c) && !WHITESPACE_CHARS.contains(*c))
+        .collect();
+
+    result.to_lowercase()
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_url_empty() {
+        assert_eq!(normalize_url(""), "");
+        assert_eq!(normalize_url("\t"), "");
+    }
+
+    #[test]
+    fn test_normalize_url_lowercase() {
+        assert_eq!(normalize_url("GitHub"), "github");
+        assert_eq!(normalize_url("HOME-PAGE"), "homepage");
+    }
+
+    #[test]
+    fn test_normalize_url_removes_whitespace() {
+        assert_eq!(normalize_url("home page"), "homepage");
+        assert_eq!(normalize_url("home\tpage"), "homepage");
+        assert_eq!(normalize_url("home\npage"), "homepage");
+        assert_eq!(normalize_url("home\r\npage"), "homepage");
+    }
+
+    #[test]
+    fn test_normalize_url_removes_hyphens_and_underscores() {
+        assert_eq!(normalize_url("home-page"), "homepage");
+        assert_eq!(normalize_url("home_page"), "homepage");
+        assert_eq!(normalize_url("home--page__test"), "homepagetest");
+    }
+
+    #[test]
+    fn test_normalize_url_complex() {
+        assert_eq!(normalize_url("Home-Page!"), "homepage");
+        assert_eq!(normalize_url("  GitHub  "), "github");
+        assert_eq!(normalize_url("Source_Code"), "sourcecode");
+        assert_eq!(normalize_url("Bug!Tracker"), "bugtracker");
+    }
+
+    #[test]
+    fn test_normalize_url_all_punctuation() {
+        assert_eq!(normalize_url("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "");
+    }
+
+    #[test]
+    fn test_normalize_url_preserves_alphanumeric() {
+        assert_eq!(normalize_url("abc123"), "abc123");
+        assert_eq!(normalize_url("Home123Page"), "home123page");
+    }
+}
