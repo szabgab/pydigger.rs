@@ -99,7 +99,15 @@ impl MyProject {
         }
     }
 
-    pub fn set_homepage(&mut self, project: &PyPiProject) {
+    // TODO: Where does the project store the VCS URL?
+    // There can be several names in project_urls and some use the home_page field for that.
+    // We should report if the porject uses the "old way" or if it uses multiple ways.
+    // For now let's check several
+
+    // TODO
+    // Report if we found a repository URL in more than one place
+    // Especially if they differ
+    pub fn process_urls(&mut self, project: &PyPiProject) {
         match &project.info.project_urls {
             Some(urls) => {
                 for (key, value) in urls.iter() {
@@ -107,8 +115,17 @@ impl MyProject {
                         if key == "Homepage" {
                             self.home_page = Some(value_str.to_string());
                             // self.home_page_source = Some(String::from("project_urls.Homepage"));
+                            self.repository = Some(value_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.homepage"));
                         }
-                        self.project_urls.insert(key.clone(), value_str.to_string());
+                        if key == "Repository" {
+                            self.repository = Some(value_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.repository"));
+                        }
+                        if key == "GitHub" {
+                            self.repository = Some(value_str.to_string());
+                            self.repository_source = Some(String::from("project_urls.github"));
+                        }
                     }
                 }
             }
@@ -122,54 +139,9 @@ impl MyProject {
             }
             None => {}
         }
-    }
-
-    pub fn set_repository_url(&mut self, project: &PyPiProject) {
-        // TODO: Where does the project store the VCS URL?
-        // There can be several names in project_urls and some use the home_page field for that.
-        // We should report if the porject uses the "old way" or if it uses multiple ways.
-        // For now let's check several
-
-        // TODO
-        // Report if we found a repository URL in more than one place
-        // Especially if they differ
-        match &project.info.project_urls {
-            Some(urls) => {
-                match urls.get("Repository") {
-                    Some(repo) => {
-                        if let Some(repo_str) = repo.as_str() {
-                            self.repository = Some(repo_str.to_string());
-                            self.repository_source = Some(String::from("project_urls.repository"));
-                            return;
-                        }
-                    }
-                    None => {}
-                }
-                match urls.get("GitHub") {
-                    Some(repo) => {
-                        if let Some(repo_str) = repo.as_str() {
-                            self.repository = Some(repo_str.to_string());
-                            self.repository_source = Some(String::from("project_urls.github"));
-                            return;
-                        }
-                    }
-                    None => {}
-                }
-                match urls.get("Homepage") {
-                    Some(repo) => {
-                        if let Some(repo_str) = repo.as_str() {
-                            self.repository = Some(repo_str.to_string());
-                            self.repository_source = Some(String::from("project_urls.homepage"));
-                            return;
-                        }
-                    }
-                    None => {}
-                }
-            }
-            None => {
-                self.repository = self.home_page.clone();
-                self.repository_source = Some(String::from("home_page"));
-            }
+        if self.repository.is_none() {
+            self.repository = self.home_page.clone();
+            self.repository_source = Some(String::from("home_page"));
         };
     }
 }

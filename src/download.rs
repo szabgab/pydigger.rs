@@ -275,8 +275,7 @@ fn analyze_project_json_from_pypi(
         has_gitlab_pipeline: None,
         has_dependabot: None,
     };
-    my_project.set_homepage(&project);
-    my_project.set_repository_url(&project);
+    my_project.process_urls(&project);
     debug!("Project Name: {}", project.info.name);
     debug!("Version: {}", project.info.version);
     if let Some(author) = &project.info.author {
