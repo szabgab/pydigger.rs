@@ -18,7 +18,7 @@ jobs:
         rustup update
         rustc -vV
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Check format
       run: cargo fmt --check
@@ -30,7 +30,7 @@ jobs:
       run: cargo test --verbose
 
     - name: Linux binary
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: pydigger-linux-release
         path: target/release/pydigger
@@ -41,7 +41,7 @@ jobs:
 
     steps:
     - name: Download binary
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
       with:
         name: pydigger-linux-release
         #github-token: ${{ secrets.GH_PAT }}
