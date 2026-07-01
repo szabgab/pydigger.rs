@@ -18,7 +18,7 @@ jobs:
         rustup update
         rustc -vV
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Check format
       run: cargo fmt --check
